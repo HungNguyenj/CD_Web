@@ -1,36 +1,39 @@
 package org.nlu.bookstore.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 @Entity
 @Table(name = "users")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    Long id;
 
     @Column(name = "username")
-    private String userName;
+    String userName;
 
     @Column(name = "password")
-    private String password;
+    String password;
 
     @Column(name = "phoneNumber")
-    private String phoneNumber;
+    String phoneNumber;
 
     @Column(name="address")
-    private String address;
+    String address;
 
-    private boolean isDelete = false;
+    String email;
+
+    boolean isDelete = false;
 
     @ManyToOne
     @JoinColumn(name = "role_id")
-    private Role role;
+    Role role;
 }
