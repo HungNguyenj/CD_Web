@@ -4,6 +4,8 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.nlu.bookstore.entity.Role;
+import org.nlu.bookstore.exception.AppException;
+import org.nlu.bookstore.exception.ErrorCode;
 import org.nlu.bookstore.repository.RoleRepository;
 import org.springframework.stereotype.Service;
 
@@ -15,7 +17,7 @@ public class RoleService {
 
     public Role findByName(String name) {
         return roleRepository.findByName(name)
-                .orElseThrow(() -> new RuntimeException("Role not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_EXISTED));
     }
 
 }

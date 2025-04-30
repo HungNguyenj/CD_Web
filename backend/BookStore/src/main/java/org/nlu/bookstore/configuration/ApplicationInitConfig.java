@@ -6,6 +6,8 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.nlu.bookstore.entity.User;
 import org.nlu.bookstore.enums.RoleName;
+import org.nlu.bookstore.exception.AppException;
+import org.nlu.bookstore.exception.ErrorCode;
 import org.nlu.bookstore.repository.RoleRepository;
 import org.nlu.bookstore.repository.UserRepository;
 import org.springframework.boot.ApplicationRunner;
@@ -26,7 +28,7 @@ public class ApplicationInitConfig {
         return args -> {
           if (userRepository.findByUserName("admin").isEmpty()) {
               var roles = roleRepository.findByName(RoleName.ADMIN.name())
-                      .orElseThrow(() -> new RuntimeException("Role not exists"));
+                      .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_EXISTED));
 
               User user = User.builder()
                       .userName("admin")
