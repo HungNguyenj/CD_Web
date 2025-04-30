@@ -4,6 +4,7 @@ import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.crypto.MACSigner;
+import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import lombok.AccessLevel;
@@ -12,13 +13,16 @@ import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
 import org.nlu.bookstore.dto.request.AuthenticationRequest;
+import org.nlu.bookstore.dto.request.IntrospectRequest;
 import org.nlu.bookstore.dto.response.AuthenticationResponse;
+import org.nlu.bookstore.dto.response.IntrospectResponse;
 import org.nlu.bookstore.entity.User;
 import org.nlu.bookstore.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
@@ -51,6 +55,23 @@ public class AuthenticationService {
         return AuthenticationResponse.builder()
                 .token(token)
                 .authenticated(true)
+                .build();
+    }
+
+    public IntrospectResponse introspect(IntrospectRequest request) throws ParseException, JOSEException {
+        var token = request.getToken();
+
+        SignedJWT signedJWT = SignedJWT.parse(token);
+
+        MACVerifier verifier =new MACVerifier(SIGN_KEY.getBytes());
+
+        //check date
+        Date expiryTime = signedJWT.getJWTClaimsSet().getExpirationTime();
+        //verify
+        var verified = signedJWT.verify(verifier);
+
+        return IntrospectResponse.builder()
+                .valid(verified && expiryTime.after(new Date()))
                 .build();
     }
 
