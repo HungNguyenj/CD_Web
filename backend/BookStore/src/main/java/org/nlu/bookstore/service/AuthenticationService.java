@@ -17,6 +17,8 @@ import org.nlu.bookstore.dto.request.IntrospectRequest;
 import org.nlu.bookstore.dto.response.AuthenticationResponse;
 import org.nlu.bookstore.dto.response.IntrospectResponse;
 import org.nlu.bookstore.entity.User;
+import org.nlu.bookstore.exception.AppException;
+import org.nlu.bookstore.exception.ErrorCode;
 import org.nlu.bookstore.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -42,12 +44,12 @@ public class AuthenticationService {
 
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
         var user = userRepository.findByUserName(request.getUsername())
-                .orElseThrow(() -> new RuntimeException("User not existed"));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
         boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPassword());
 
         if (!authenticated) {
-            throw new RuntimeException("Unauthenticated");
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
         }
 
         var token = generateToken(user);

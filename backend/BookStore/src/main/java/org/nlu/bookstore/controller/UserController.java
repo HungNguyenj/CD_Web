@@ -1,5 +1,6 @@
 package org.nlu.bookstore.controller;
 
+import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -23,7 +24,7 @@ public class UserController {
     UserService userService;
 
     @PostMapping
-    ResponseEntity<ApiResponse<UserResponse>> createUser(@RequestBody UserCreationRequest request) {
+    ResponseEntity<ApiResponse<UserResponse>> createUser(@RequestBody @Valid UserCreationRequest request) {
         ApiResponse<UserResponse> apiResponse = ApiResponse.<UserResponse>builder()
                 .data(userService.createUser(request))
                 .build();

@@ -8,6 +8,8 @@ import org.nlu.bookstore.dto.request.UserUpdateRequest;
 import org.nlu.bookstore.dto.response.UserResponse;
 import org.nlu.bookstore.entity.User;
 import org.nlu.bookstore.enums.RoleName;
+import org.nlu.bookstore.exception.AppException;
+import org.nlu.bookstore.exception.ErrorCode;
 import org.nlu.bookstore.mapper.UserMapper;
 import org.nlu.bookstore.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -27,7 +29,7 @@ public class UserService {
 
     public UserResponse createUser(UserCreationRequest request) {
         if (userRepository.existsByUserName(request.getUserName())){
-            throw new RuntimeException("User Not Found");
+            throw new AppException(ErrorCode.USER_EXISTED);
         }
 
         User user = userMapper.toUser(request);
@@ -43,12 +45,12 @@ public class UserService {
 
     public UserResponse getUser(Long id) {
         return userMapper.toUserResponse(userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found")));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED)));
     }
 
     public UserResponse updateUser(Long id, UserUpdateRequest request) {
         User user =userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
         userMapper.updateUser(user, request);
         return userMapper.toUserResponse(userRepository.save(user));
     }
