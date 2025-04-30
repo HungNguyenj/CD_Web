@@ -1,32 +1,33 @@
 package org.nlu.bookstore.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 @Entity
 @Table(name = "order_items")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class OrderItem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    Long id;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
-    private User user;
+    User user;
 
     @ManyToOne
     @JoinColumn(name = "product_id")
-    private Product product;
+    Product product;
 
-    private int quantity;
+    int quantity;
 
     @ManyToOne
     @JoinColumn(name = "payment_id")
-    private Payment payment;
+    Payment payment;
 }

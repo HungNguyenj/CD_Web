@@ -2,31 +2,38 @@ package org.nlu.bookstore.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.util.List;
 
 @Entity
 @Table(name = "payments")
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class Payment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    Long id;
 
-    private double amount;
+    double amount;
 
-    private String method;
+    String method;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
-    private User user;
+    User user;
 
     @JsonIgnore
     @OneToMany(mappedBy = "payment", cascade = CascadeType.ALL)
-    private List<OrderItem> orderItems;
+    List<OrderItem> orderItems;
 
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "address_id", referencedColumnName = "id")
-    private Address address; // Assuming Address is another entity
+    Address address; // Assuming Address is another entity
 
 }
