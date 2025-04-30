@@ -9,8 +9,8 @@ import org.nlu.bookstore.dto.response.UserResponse;
 import org.nlu.bookstore.entity.User;
 import org.nlu.bookstore.enums.RoleName;
 import org.nlu.bookstore.mapper.UserMapper;
-import org.nlu.bookstore.repository.RoleRepository;
 import org.nlu.bookstore.repository.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -23,6 +23,7 @@ public class UserService {
     RoleService roleService;
     UserRepository userRepository;
     UserMapper userMapper;
+    PasswordEncoder passwordEncoder;
 
     public UserResponse createUser(UserCreationRequest request) {
         if (userRepository.existsByUserName(request.getUserName())){
@@ -30,6 +31,7 @@ public class UserService {
         }
 
         User user = userMapper.toUser(request);
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole(roleService.findByName(RoleName.USER.name()));
 
         return userMapper.toUserResponse(userRepository.save(user));
