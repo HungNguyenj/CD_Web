@@ -4,13 +4,15 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-@Entity
-@Table(name = "users")
+import java.util.Set;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@Entity
+@Table(name = "users")
 public class User {
 
     @Id
@@ -18,7 +20,7 @@ public class User {
     Long id;
 
     @Column(name = "username")
-    String userName;
+    String username;
 
     @Column(name = "password")
     String password;
@@ -33,7 +35,6 @@ public class User {
 
     boolean isDelete = false;
 
-    @ManyToOne
-    @JoinColumn(name = "role_id")
-    Role role;
+    @ManyToMany
+    Set<Role> roles;
 }

@@ -14,9 +14,8 @@ import org.nlu.bookstore.entity.Role;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserResponse {
     long id;
-    String userName;
+    String username;
     String phoneNumber;
     String address;
     String email;
-    String role;
 }

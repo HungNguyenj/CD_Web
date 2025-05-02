@@ -14,11 +14,7 @@ import java.util.List;
 public interface UserMapper {
     User toUser(UserCreationRequest request);
 
-    @Mapping(source = "role.name", target = "role")
     UserResponse toUserResponse(User user);
-
-    @Mapping(source = "role.name", target = "role")
-    List<UserResponse> toUserResponse(List<User> users);
 
     void updateUser(@MappingTarget User user, UserUpdateRequest request);
 }

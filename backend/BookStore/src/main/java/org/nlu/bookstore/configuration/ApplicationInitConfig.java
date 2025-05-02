@@ -6,14 +6,14 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.nlu.bookstore.entity.User;
 import org.nlu.bookstore.enums.RoleName;
-import org.nlu.bookstore.exception.AppException;
-import org.nlu.bookstore.exception.ErrorCode;
 import org.nlu.bookstore.repository.RoleRepository;
 import org.nlu.bookstore.repository.UserRepository;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.util.HashSet;
 
 @Configuration
 @RequiredArgsConstructor
@@ -26,14 +26,13 @@ public class ApplicationInitConfig {
     @Bean
     ApplicationRunner applicationRunner(UserRepository userRepository, RoleRepository roleRepository) {
         return args -> {
-          if (userRepository.findByUserName("admin").isEmpty()) {
-              var roles = roleRepository.findByName(RoleName.ADMIN.name())
-                      .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_EXISTED));
+          if (userRepository.findByUsername("admin").isEmpty()) {
+              var roles = roleRepository.findAllByName(RoleName.ADMIN.name());
 
               User user = User.builder()
-                      .userName("admin")
+                      .username("admin")
                       .password(passwordEncoder.encode("admin"))
-                      .role(roles)
+                      .roles(new HashSet<>(roles))
                       .build();
 
               userRepository.save(user);

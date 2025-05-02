@@ -8,7 +8,6 @@ import org.nlu.bookstore.dto.request.ApiResponse;
 import org.nlu.bookstore.dto.request.UserCreationRequest;
 import org.nlu.bookstore.dto.request.UserUpdateRequest;
 import org.nlu.bookstore.dto.response.UserResponse;
-import org.nlu.bookstore.entity.User;
 import org.nlu.bookstore.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -60,4 +59,9 @@ public class UserController {
         return ResponseEntity.ok().body(apiResponse);
     }
 
+    @DeleteMapping("/{userId}")
+    ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable Long userId) {
+        userService.deleteUser(userId);
+        return ResponseEntity.ok().body(ApiResponse.<Void>builder().build());
+    }
 }
