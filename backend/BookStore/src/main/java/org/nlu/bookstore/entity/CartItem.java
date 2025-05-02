@@ -4,13 +4,12 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-@Entity
-@Table(name = "cart_items")
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@Entity
 public class CartItem {
 
     @Id
@@ -26,6 +25,4 @@ public class CartItem {
     Product product;
 
     int quantity;
-
-
 }

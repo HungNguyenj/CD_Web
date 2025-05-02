@@ -5,15 +5,16 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.util.HashSet;
 import java.util.Set;
 
-@Entity
-@Table(name = "categories")
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@Entity
+@Table(name = "categories")
 public class Category {
 
     @Id
@@ -22,7 +23,7 @@ public class Category {
 
     String name;
 
-    @OneToMany(mappedBy = "category", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference
+    @OneToMany(mappedBy = "category", fetch = FetchType.LAZY, cascade = CascadeType.REMOVE)
+    @JsonManagedReference // cha
     Set<Product> products;
 }
