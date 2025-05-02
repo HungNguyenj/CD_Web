@@ -4,12 +4,14 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.nlu.bookstore.dto.request.ApiResponse;
 import org.nlu.bookstore.dto.request.UserCreationRequest;
 import org.nlu.bookstore.dto.request.UserUpdateRequest;
 import org.nlu.bookstore.dto.response.UserResponse;
 import org.nlu.bookstore.service.UserService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,6 +20,7 @@ import java.util.List;
 @RequestMapping("/users")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@Slf4j
 public class UserController {
 
     UserService userService;
@@ -33,6 +36,11 @@ public class UserController {
 
     @GetMapping
     ResponseEntity<ApiResponse<List<UserResponse>>> getUsers() {
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        log.info("Username: {}", authentication.getName());
+        authentication.getAuthorities().forEach(
+                grantedAuthority -> log.info("GrantedAuthority: {}", grantedAuthority.getAuthority()));
+
         ApiResponse<List<UserResponse>> apiResponse = ApiResponse.<List<UserResponse>>builder()
                 .data(userService.getUsers())
                 .build();
