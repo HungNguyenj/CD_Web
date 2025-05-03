@@ -24,8 +24,11 @@ import javax.crypto.spec.SecretKeySpec;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    private final String[] PUBLIC_ENDPOINTS = {
+    private final String[] PUBLIC_POST_ENDPOINTS = {
         "/auth/login", "/auth/introspect", "/users"
+    };
+    private final String[] PUBLIC_GET_ENDPOINTS = {
+        "/products", "/products/{id}",
     };
 
     @Value("${jwt.signerKey}")
@@ -36,7 +39,8 @@ public class SecurityConfig {
 
         //phan quyen
         httpSecurity.authorizeHttpRequests(request ->
-                request.requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
+                request.requestMatchers(HttpMethod.POST, PUBLIC_POST_ENDPOINTS).permitAll()
+                        .requestMatchers(HttpMethod.GET, PUBLIC_GET_ENDPOINTS).permitAll()
 //                        .requestMatchers(HttpMethod.GET, "/users").hasRole("ADMIN")
                         .anyRequest().authenticated()
         );
