@@ -16,6 +16,7 @@ public enum ErrorCode {
     UNAUTHORIZED(1007, "You do not have permission", HttpStatus.FORBIDDEN),
     ROLE_NOT_EXISTED(1008, "Role not existed", HttpStatus.NOT_FOUND),
     EMAIL_INVALID(1004, "Your email is not valid", HttpStatus.BAD_REQUEST),
+    CATEGORY_EXISTED(1004, "This category existed", HttpStatus.BAD_REQUEST),
     ;
 
     private int code;
