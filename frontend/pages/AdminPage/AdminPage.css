@@ -1,0 +1,29 @@
+/* src/AdminPage.css */
+.header {
+    background: #1890ff;
+    color: #fff;
+    font-size: 20px;
+    text-align: center;
+    line-height: 64px;
+  }
+  
+  .logo {
+    color: #fff;
+    font-weight: bold;
+  }
+  
+  .product-management {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .add-product {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .user-management, .product-management {
+    padding: 24px;
+}
+  
