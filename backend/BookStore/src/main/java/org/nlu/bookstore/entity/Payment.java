@@ -7,20 +7,19 @@ import lombok.experimental.FieldDefaults;
 
 import java.util.List;
 
-//@Data
-//@AllArgsConstructor
-//@NoArgsConstructor
-//@Builder
-//@FieldDefaults(level = AccessLevel.PRIVATE)
-//@Entity
-//@Table(name = "payments")
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
+@Entity
 public class Payment {
-//    @Id
-//    @GeneratedValue(strategy = GenerationType.IDENTITY)
-//    Long id;
-//
-//    double amount;
-//
-//    String method;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    Long id;
+
+    double amount;
+
+    String method;
 
 }

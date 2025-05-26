@@ -4,7 +4,24 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
+@Entity
 public class OrderItem {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    Long id;
 
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    User user;
+
+    @ManyToOne
+    @JoinColumn(name = "product_id")
+    Product product;
+
+    int quantity;
 }

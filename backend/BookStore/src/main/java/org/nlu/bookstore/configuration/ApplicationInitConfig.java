@@ -4,6 +4,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.nlu.bookstore.entity.Role;
 import org.nlu.bookstore.entity.User;
 import org.nlu.bookstore.enums.RoleName;
 import org.nlu.bookstore.repository.RoleRepository;
@@ -22,6 +23,24 @@ import java.util.HashSet;
 public class ApplicationInitConfig {
 
     PasswordEncoder passwordEncoder;
+
+    @Bean
+    ApplicationRunner applicationRunner1(RoleRepository roleRepository) {
+        return args -> {
+            if (roleRepository.findByName(RoleName.ADMIN.name()).isEmpty()) {
+                Role role = Role.builder()
+                        .name(RoleName.ADMIN.name())
+                        .build();
+                roleRepository.save(role);
+            }
+            if (roleRepository.findByName(RoleName.USER.name()).isEmpty()) {
+                Role role = Role.builder()
+                        .name(RoleName.USER.name())
+                        .build();
+                roleRepository.save(role);
+            }
+        };
+    }
 
     @Bean
     ApplicationRunner applicationRunner(UserRepository userRepository, RoleRepository roleRepository) {
