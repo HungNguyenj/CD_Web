@@ -15,10 +15,11 @@ public enum ErrorCode {
     UNAUTHENTICATED(1006, "Unauthenticated", HttpStatus.UNAUTHORIZED),
     UNAUTHORIZED(1007, "You do not have permission", HttpStatus.FORBIDDEN),
     ROLE_NOT_EXISTED(1008, "Role not existed", HttpStatus.NOT_FOUND),
-    EMAIL_INVALID(1004, "Your email is not valid", HttpStatus.BAD_REQUEST),
-    CATEGORY_EXISTED(1004, "This category existed", HttpStatus.BAD_REQUEST),
-    CATEGORY_NOT_EXISTED(1004, "This category not existed in database", HttpStatus.BAD_REQUEST),
-    PRODUCT_NOT_FOUND(1004, "This product not found", HttpStatus.BAD_REQUEST),
+    EMAIL_INVALID(1009, "Your email is not valid", HttpStatus.BAD_REQUEST),
+    CATEGORY_EXISTED(1010, "This category existed", HttpStatus.BAD_REQUEST),
+    CATEGORY_NOT_EXISTED(1011, "This category not existed in database", HttpStatus.BAD_REQUEST),
+    PRODUCT_NOT_FOUND(1012, "This product not found", HttpStatus.BAD_REQUEST),
+    CART_ITEM_NOT_FOUND(1013, "Cart item not found", HttpStatus.BAD_REQUEST),
     ;
 
     private int code;

@@ -13,6 +13,7 @@ import java.util.List;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
+@Table(name = "payments")
 public class Payment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,5 +22,9 @@ public class Payment {
     double amount;
 
     String method;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "payment", cascade = CascadeType.ALL)
+    List<OrderItem> orderItems;
 
 }
