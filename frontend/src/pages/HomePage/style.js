@@ -24,9 +24,9 @@ export const WrapperButtonMore = styled(ButtonComponent)`
 `
 
 export const WrapperProducts = styled.div`
-    display: flex;
-    justify-content:center;
-    gap: 15px;
-    margin-top:20px;
-    flex-wrap: wrap;
+    display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 24px;
+    margin-top:20=4px;
+    
 `
