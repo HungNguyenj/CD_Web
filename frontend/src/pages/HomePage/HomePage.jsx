@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import TypeProduct from "../../components/TypeProduct/TypeProduct";
 import Footer from "../../components/FooterComponent/Footer";
-import { WrapperButtonMore, WrapperTypeProduct } from "./style";
+import { WrapperButtonMore, WrapperTypeProduct, WrapperProducts } from "./style";
 import slide1 from '../../assets/images/slide1.jpg'
 import slide2 from '../../assets/images/slide2.jpg'
 import slide3 from '../../assets/images/slide3.jpg'
@@ -34,7 +34,7 @@ const HomePage = () => {
 
     return (
         <>
-            <div style={{ padding: '0 120px' }}>
+            <div style={{ padding: '20px 80px' }}>
                 <WrapperTypeProduct>
                     {categories && categories.length > 0 ? ( // Kiểm tra trước khi gọi map
                         categories.map((categories) => (
@@ -49,25 +49,30 @@ const HomePage = () => {
 
                 </WrapperTypeProduct>
             </div>
-            <div id="container" style={{ backgroundColor: '#efefef', padding: '0 120px', height: 'auto', width: '100%' }}>
+            <div id="container" style={{ backgroundColor: '#f9f9f9', padding: '20px 80px' }}>
+
                 <SlideComponent arrImages={[slide1, slide2, slide3]} />
-                <div style={{ marginTop: '20px', display: 'flex', alignItems: 'center', gap: '30px', flexWrap: 'wrap' }}>
-                    {products.slice(0, visibleProducts).map((product) => (
-                        <CardComponent key={product.id} product={product} />
-                    ))}
-                </div>
+                <h2 style={{ marginTop: '30px', fontSize: '24px', fontWeight: 'bold' }}>Sản phẩm nổi bật</h2>
+
+                <WrapperProducts>
+    {products.slice(0, visibleProducts).map((product) => (
+        <CardComponent key={product.id} product={product} />
+    ))}
+</WrapperProducts>
+
                 {visibleProducts < products.length && (
                     <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginTop: '10px' }}>
-                        <WrapperButtonMore
-                            textButton="Xem thêm"
-                            type="outline"
-                            styleButton={{
-                                border: '1px solid rgb(11,116,229)', color: 'rgb(11,116,229)',
-                                width: '240px', height: '38px', borderRadius: '4px'
-                            }}
-                            styleTextButton={{ fontWeight: 500 }}
-                            onClick={loadMoreProducts}
-                        />
+                  <WrapperButtonMore
+    textButton="Xem thêm"
+    type="outline"
+    styleButton={{
+        border: '1px solid rgb(11,116,229)', color: 'rgb(11,116,229)',
+        width: '240px', height: '38px', borderRadius: '4px'
+    }}
+    styleTextButton={{ fontWeight: 500 }}
+    onClick={loadMoreProducts}
+/>
+
                     </div>
                 )}
             </div>
