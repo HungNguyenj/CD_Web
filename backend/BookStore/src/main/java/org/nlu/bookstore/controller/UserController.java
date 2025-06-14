@@ -72,4 +72,5 @@ public class UserController {
         userService.deleteUser(userId);
         return ResponseEntity.ok().body(ApiResponse.<Void>builder().build());
     }
+
 }

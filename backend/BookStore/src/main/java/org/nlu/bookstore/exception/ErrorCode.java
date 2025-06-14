@@ -24,6 +24,9 @@ public enum ErrorCode {
     CART_EMPTY(1015, "Cart is empty", HttpStatus.BAD_REQUEST),
     ORDER_NOT_FOUND(1016, "Order not found", HttpStatus.BAD_REQUEST),
     ORDER_CANNOT_CANCEL(1017, "Order not cancel", HttpStatus.BAD_REQUEST),
+    OTP_INVALID(1018, "OTP not valid", HttpStatus.BAD_REQUEST),
+    OTP_IS_USED(1019, "OTP is used", HttpStatus.BAD_REQUEST),
+    OTP_IS_EXPIRY(1019, "OTP is expiry", HttpStatus.BAD_REQUEST),
 
     ;
 
