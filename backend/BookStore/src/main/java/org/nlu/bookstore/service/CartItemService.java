@@ -16,6 +16,7 @@ import org.nlu.bookstore.mapper.CartItemMapper;
 import org.nlu.bookstore.repository.CartItemRepository;
 import org.nlu.bookstore.repository.ProductRepository;
 import org.nlu.bookstore.repository.UserRepository;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -86,12 +87,35 @@ public class CartItemService {
         if (request.getQuantity() > item.getProduct().getQuantity()) {
             throw new AppException(ErrorCode.QUANTITY_EXCEEDS_STOCK);
         }
-        item.setQuantity(request.getQuantity());
+        item.setQuantity(item.getQuantity() + request.getQuantity());
 
         return cartItemMapper.toCartItemResponse(cartItemRepository.save(item));
     }
 
     public void deleteCartItem(Long cartItemId) {
+        var context = SecurityContextHolder.getContext();
+        String username = context.getAuthentication().getName();
+
+        User user = userRepository.findByUsername(username)
+                        .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        CartItem cartItem = cartItemRepository.findById(cartItemId)
+                .orElseThrow(() -> new AppException(ErrorCode.CART_ITEM_NOT_FOUND));
+
+        if (!cartItem.getUser().getId().equals(user.getId())) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
         cartItemRepository.deleteById(cartItemId);
+    }
+
+    public void clearUserCart(Long userId) {
+        var user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        List<CartItem> cartItems = cartItemRepository.findAllByUserId(user.getId());
+        for (CartItem cartItem : cartItems) {
+            cartItemRepository.deleteById(cartItem.getId());
+        }
     }
 }

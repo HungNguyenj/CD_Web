@@ -28,7 +28,5 @@ public class OrderItem extends BaseEntity {
 
     private int quantity;
 
-    private BigDecimal unitPrice; // Lưu giá tại thời điểm đặt hàng
-
-    private BigDecimal subtotal; // subtotal = quantity * unitPrice
+    private BigDecimal subtotal; // product price * quantity
 }
