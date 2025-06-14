@@ -20,6 +20,7 @@ public enum ErrorCode {
     CATEGORY_NOT_EXISTED(1011, "This category not existed in database", HttpStatus.BAD_REQUEST),
     PRODUCT_NOT_FOUND(1012, "This product not found", HttpStatus.BAD_REQUEST),
     CART_ITEM_NOT_FOUND(1013, "Cart item not found", HttpStatus.BAD_REQUEST),
+    QUANTITY_EXCEEDS_STOCK(1014, "Product quantity is not enough for request", HttpStatus.BAD_REQUEST),
     ;
 
     private int code;

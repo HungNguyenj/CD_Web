@@ -12,7 +12,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
 @Table(name = "products")
-public class Product {
+public class Product extends BaseEntity{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
@@ -23,6 +23,7 @@ public class Product {
     String image;
     double rating;
     double discount;
+    int quantity;
 
     @ManyToOne
     @JoinColumn(name = "category_id")
