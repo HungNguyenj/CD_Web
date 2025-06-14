@@ -8,8 +8,8 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class CartItemRequest {
-    Long userId;
-    Long productId;
-    int quantity;
+public class OrderRequest {
+    String address;
+    String note;
+    String phone;
 }
