@@ -25,7 +25,8 @@ import javax.crypto.spec.SecretKeySpec;
 public class SecurityConfig {
 
     private final String[] PUBLIC_POST_ENDPOINTS = {
-        "/auth/login", "/auth/introspect", "/users"
+        "/auth/login", "/auth/forgot-password", "/auth/verify-otp", "/auth/reset-password",
+        "/auth/introspect", "/users"
     };
     private final String[] PUBLIC_GET_ENDPOINTS = {
         "/products", "/products/{id}",
