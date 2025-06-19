@@ -20,13 +20,14 @@ import org.nlu.bookstore.dto.response.ForgotPasswordResponse;
 import org.nlu.bookstore.dto.response.IntrospectResponse;
 import org.nlu.bookstore.dto.response.UserResponse;
 import org.nlu.bookstore.entity.OtpToken;
+import org.nlu.bookstore.entity.Role;
 import org.nlu.bookstore.entity.User;
+import org.nlu.bookstore.enums.RoleName;
 import org.nlu.bookstore.exception.AppException;
 import org.nlu.bookstore.exception.ErrorCode;
 import org.nlu.bookstore.repository.OtpTokenRepository;
 import org.nlu.bookstore.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -71,8 +72,17 @@ public class AuthenticationService {
 
         return AuthenticationResponse.builder()
                 .token(token)
-                .authenticated(true)
+                .isAdmin(checkAdmin(user))
                 .build();
+    }
+
+    private boolean checkAdmin(User user) {
+        for (Role role : user.getRoles()) {
+            if (RoleName.ADMIN.name().equals(role.getName())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public IntrospectResponse introspect(IntrospectRequest request) throws ParseException, JOSEException {

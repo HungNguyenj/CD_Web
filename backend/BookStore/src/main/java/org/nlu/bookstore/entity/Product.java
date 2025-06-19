@@ -25,6 +25,11 @@ public class Product extends BaseEntity{
     double discount;
     int quantity;
 
+    String description;
+    String author;
+    String publisher;
+    Integer publishYear;
+
     @ManyToOne
     @JoinColumn(name = "category_id")
     @JsonBackReference // con

@@ -16,4 +16,10 @@ public class ProductRequest {
     double rating;
     double discount;
     String category;
+    int quantity;
+
+    String description;
+    String author;
+    String publisher;
+    Integer publishYear;
 }

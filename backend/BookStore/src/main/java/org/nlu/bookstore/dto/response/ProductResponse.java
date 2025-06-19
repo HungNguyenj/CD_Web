@@ -9,6 +9,7 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ProductResponse {
+    Long id;
     String name;
     Double price;
     int sold;
@@ -16,4 +17,10 @@ public class ProductResponse {
     double rating;
     double discount;
     String category;
+    int quantity;
+
+    String description;
+    String author;
+    String publisher;
+    Integer publishYear;
 }

@@ -15,6 +15,7 @@ import org.nlu.bookstore.repository.RoleRepository;
 import org.nlu.bookstore.repository.UserRepository;
 import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -75,5 +76,14 @@ public class UserService {
         userRepository.deleteById(userId);
     }
 
+
+    public UserResponse getMyInfo() {
+        var context = SecurityContextHolder.getContext();
+        String username = context.getAuthentication().getName();
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        return userMapper.toUserResponse(user);
+    }
 
 }

@@ -73,4 +73,12 @@ public class UserController {
         return ResponseEntity.ok().body(ApiResponse.<Void>builder().build());
     }
 
+    @GetMapping("/my-profile")
+    ResponseEntity<ApiResponse<UserResponse>> getMyProfile() {
+        ApiResponse<UserResponse> apiResponse = ApiResponse.<UserResponse>builder()
+                .data(userService.getMyInfo())
+                .build();
+        return ResponseEntity.ok().body(apiResponse);
+    }
+
 }

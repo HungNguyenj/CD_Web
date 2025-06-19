@@ -40,10 +40,10 @@ public class ProductController {
         return ResponseEntity.ok().body(apiResponse);
     }
 
-    @GetMapping("/{userId}")
-    ResponseEntity<ApiResponse<ProductResponse>> getUserById(@PathVariable Long userId) {
+    @GetMapping("/{productId}")
+    ResponseEntity<ApiResponse<ProductResponse>> getProductById(@PathVariable Long productId) {
         ApiResponse<ProductResponse> apiResponse = ApiResponse.<ProductResponse>builder()
-                .data(productService.getProduct(userId))
+                .data(productService.getProduct(productId))
                 .build();
 
         return ResponseEntity.ok().body(apiResponse);
@@ -67,5 +67,21 @@ public class ProductController {
         return ResponseEntity.ok().body(ApiResponse.<Void>builder().build());
     }
 
+    //search
+    @GetMapping("/search")
+    ResponseEntity<ApiResponse<List<ProductResponse>>> searchProducts(@RequestParam String keyword) {
+        ApiResponse<List<ProductResponse>> apiResponse = ApiResponse.<List<ProductResponse>>builder()
+                .data(productService.searchProduct(keyword))
+                .build();
+        return ResponseEntity.ok().body(apiResponse);
+    }
 
+    // goi y san pham
+    @GetMapping("/suggestions")
+    ResponseEntity<ApiResponse<List<ProductResponse>>> suggestProducts(@RequestParam Long productId) {
+        ApiResponse<List<ProductResponse>> apiResponse = ApiResponse.<List<ProductResponse>>builder()
+                .data(productService.getProductSuggest(productId))
+                .build();
+        return ResponseEntity.ok().body(apiResponse);
+    }
 }

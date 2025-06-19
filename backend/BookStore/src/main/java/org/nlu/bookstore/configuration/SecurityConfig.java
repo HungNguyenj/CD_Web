@@ -1,5 +1,8 @@
 package org.nlu.bookstore.configuration;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -8,6 +11,7 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
@@ -16,8 +20,12 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
+import org.springframework.security.web.firewall.DefaultHttpFirewall;
+import org.springframework.security.web.firewall.HttpFirewall;
 
 import javax.crypto.spec.SecretKeySpec;
+import java.io.IOException;
 
 @Configuration
 @EnableWebSecurity
@@ -25,11 +33,12 @@ import javax.crypto.spec.SecretKeySpec;
 public class SecurityConfig {
 
     private final String[] PUBLIC_POST_ENDPOINTS = {
-        "/auth/login", "/auth/forgot-password", "/auth/verify-otp", "/auth/reset-password",
-        "/auth/introspect", "/users"
+        "/auth/login", "/auth/forgot-password", "/auth/verify-otp", "/auth/reset-password", "/auth/introspect",
+        "/users"
     };
     private final String[] PUBLIC_GET_ENDPOINTS = {
         "/products", "/products/{id}",
+        "/categories"
     };
 
     @Value("${jwt.signerKey}")
@@ -74,6 +83,7 @@ public class SecurityConfig {
 //        return source;
 //    }
 
+
     @Bean
     JwtDecoder jwtDecoder() {
         SecretKeySpec secretKeySpec = new SecretKeySpec(SIGN_KEY.getBytes(), "HS512");
@@ -98,4 +108,25 @@ public class SecurityConfig {
     PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(10);
     }
+
+//    @Bean
+//    public SimpleUrlAuthenticationSuccessHandler authenticationSuccessHandler() {
+//        return new SimpleUrlAuthenticationSuccessHandler() {
+//            @Override
+//            protected void handle(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+//                String targetUrl;
+//                if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+//                    targetUrl = "/admin";
+//                } else {
+//                    targetUrl = "/";
+//                }
+//            }
+//        };
+//    }
+//    @Bean
+//    public HttpFirewall allowUrlEncodedSlashHttpFirewall() {
+//        DefaultHttpFirewall firewall = new DefaultHttpFirewall();
+//        firewall.setAllowUrlEncodedSlash(true); // Cho phép `//` trong URL
+//        return firewall;
+//    }
 }

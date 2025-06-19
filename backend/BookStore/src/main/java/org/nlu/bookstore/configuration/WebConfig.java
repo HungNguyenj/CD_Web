@@ -11,8 +11,8 @@ public class WebConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
         //Ket noi voi front end
         registry.addMapping("/**")
-                .allowedOrigins("http://localhost:5173") // Your frontend URL
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedOrigins("http://localhost:3000") // Địa chỉ React Dev Server
+                .allowedMethods("GET", "POST", "PUT", "DELETE")
                 .allowedHeaders("*")
                 .allowCredentials(true)
                 .maxAge(3600); // 1 hour
