@@ -4,10 +4,13 @@ import { FaUser, FaPhone, FaMapMarkerAlt, FaEdit, FaSave } from 'react-icons/fa'
 
 const Profile = () => {
     const [profile, setProfile] = useState(null);
+    const [editMode, setEditMode] = useState(false);
+    const [formData, setFormData] = useState({ phoneNumber: '', address: '' });
     const [error, setError] = useState(null);
-    const [editMode, setEditMode] = useState(false); // Trạng thái để kiểm soát việc hiển thị form chỉnh sửa
-    const [phoneNumber, setPhoneNumber] = useState('');
-    const [address, setAddress] = useState('');
+
+    useEffect(() => {
+        fetchProfile();
+    }, []);
 
     const fetchProfile = async () => {
         try {
@@ -17,101 +20,90 @@ const Profile = () => {
                 },
             });
             setProfile(response.data);
-            setPhoneNumber(response.data.phoneNumber);
-            setAddress(response.data.address);
-        } catch (error) {
-            setError(error.response.data.message);
+            setFormData({
+                phoneNumber: response.data.phoneNumber || '',
+                address: response.data.address || '',
+            });
+        } catch (err) {
+            console.error(err);
+            setError(err.response?.data?.message || 'Error fetching profile');
         }
     };
 
-    useEffect(() => {
-        fetchProfile();
-    }, []);
+    const handleEdit = () => {
+        setEditMode(true);
+    };
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
 
     const handleUpdateProfile = async () => {
-        fetch(`http://localhost:8080/update/${profile.id}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${localStorage.getItem('token')}`,
-            },
-            body: JSON.stringify({ phoneNumber, address }),
-        })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Profile updated successfully:');
+        try {
+            const response = await axios.put(
+                `http://localhost:8080/update/${profile.id}`,
+                formData,
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${localStorage.getItem('token')}`,
+                    },
                 }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Profile updated successfully:', data);
-                setProfile(data); // Cập nhật lại thông tin profile trong state
-                setEditMode(false); // Thoát chế độ chỉnh sửa
-                fetchProfile(); // Reload lại thông tin profile
-            })
-            .catch(error => {
-                console.error('Profile updated successfully:', error);
-                // Xử lý lỗi khi cập nhật không thành công
-                setError('Profile updated successfully:');
-                window.location.reload(); // Load lại trang
-            });
-    };
-
-    const handleEdit = () => {
-        setEditMode(true); // Khi nhấn chỉnh sửa, hiển thị form chỉnh sửa
-    };
-
-    const handleChangePhoneNumber = (event) => {
-        setPhoneNumber(event.target.value);
-    };
-
-    const handleChangeAddress = (event) => {
-        setAddress(event.target.value);
+            );
+            setProfile(response.data);
+            setEditMode(false);
+            fetchProfile();
+        } catch (err) {
+            console.error(err);
+            setError(err.response?.data?.message || 'Error updating profile');
+        }
     };
 
     if (error) {
-        return <div style={{ maxWidth: '600px', margin: 'auto', padding: '20px', border: '1px solid #ccc', borderRadius: '5px', boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)' }}>{error}</div>;
+        return <div style={styles.error}>{error}</div>;
     }
 
     if (!profile) {
-        return <div style={{ maxWidth: '600px', margin: 'auto', padding: '20px', border: '1px solid #ccc', borderRadius: '5px', boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)' }}>Loading...</div>;
+        return <div style={styles.loading}>Loading...</div>;
     }
 
     return (
         <div style={styles.container}>
-            <h2 style={styles.title}>Profile</h2>
-            <div style={styles.info}>
-                <FaUser style={styles.icon} />
-                <p><strong>Username:</strong> {profile.username}</p>
-            </div>
-            <div style={styles.info}>
-                <FaPhone style={styles.icon} />
-                <p><strong>Phone Number:</strong> {profile.phoneNumber}</p>
-            </div>
-            <div style={styles.info}>
-                <FaMapMarkerAlt style={styles.icon} />
-                <p><strong>Address:</strong> {profile.address}</p>
-            </div>
+            <h2 style={styles.title}>Thông Tin Chi Tiết</h2>
+            <div style={styles.info}><FaUser style={styles.icon} /><strong>Username:</strong> {profile.username}</div>
+            <div style={styles.info}><FaPhone style={styles.icon} /><strong>Phone:</strong> {profile.phoneNumber}</div>
+            <div style={styles.info}><FaMapMarkerAlt style={styles.icon} /><strong>Address:</strong> {profile.address}</div>
 
             {editMode ? (
-                <form style={styles.form}>
-                    <label style={styles.label}>
-                        Phone Number:
-                        <input type="text" value={phoneNumber} onChange={handleChangePhoneNumber} style={styles.input} />
-                    </label>
-                    <br />
-                    <label style={styles.label}>
-                        Address:
-                        <input type="text" value={address} onChange={handleChangeAddress} style={styles.input} />
-                    </label>
-                    <br />
-                    <button type="button" onClick={handleUpdateProfile} style={{ ...styles.button, ...styles.saveButton }}>
-                        <FaSave style={styles.iconButton} /> Save
+                <div style={styles.form}>
+                    <div style={styles.formGroup}>
+                        <label>Phone Number:</label>
+                        <input
+                            type="text"
+                            name="phoneNumber"
+                            value={formData.phoneNumber}
+                            onChange={handleInputChange}
+                            style={styles.input}
+                        />
+                    </div>
+                    <div style={styles.formGroup}>
+                        <label>Address:</label>
+                        <input
+                            type="text"
+                            name="address"
+                            value={formData.address}
+                            onChange={handleInputChange}
+                            style={styles.input}
+                        />
+                    </div>
+                    <button onClick={handleUpdateProfile} style={{ ...styles.button, ...styles.saveButton }}>
+                        <FaSave /> Lưu
                     </button>
-                </form>
+                </div>
             ) : (
                 <button onClick={handleEdit} style={{ ...styles.button, ...styles.editButton }}>
-                    <FaEdit style={styles.iconButton} /> Edit Profile
+                    <FaEdit /> Chỉnh sửa
                 </button>
             )}
         </div>
@@ -121,80 +113,70 @@ const Profile = () => {
 const styles = {
     container: {
         maxWidth: '600px',
-        margin: 'auto',
+        margin: '50px auto',
         padding: '30px',
         border: '1px solid #ddd',
         borderRadius: '10px',
-        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-        backgroundColor: '#ffffff',
-        fontFamily: "'Arial', sans-serif",
-        textAlign: 'center',
-        transition: 'transform 0.3s',
+        backgroundColor: '#fff',
+        boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+        fontFamily: 'Arial, sans-serif',
     },
     title: {
-        fontSize: '26px',
-        marginBottom: '20px',
-        color: '#333',
+        fontSize: '28px',
         fontWeight: 'bold',
-        borderBottom: '2px solid #007bff',
-        paddingBottom: '10px',
+        marginBottom: '20px',
+        textAlign: 'center',
+        color: '#007bff',
     },
     info: {
+        fontSize: '20px',
+        margin: '15px 0',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: '15px',
     },
     icon: {
         marginRight: '10px',
         color: '#007bff',
     },
     form: {
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
+        marginTop: '20px',
     },
-    label: {
-        display: 'block',
-        marginBottom: '10px',
-        fontSize: '18px',
-        color: '#555',
+    formGroup: {
+        marginBottom: '15px',
     },
     input: {
-        width: 'calc(100% - 20px)',
+        width: '100%',
         padding: '10px',
-        marginTop: '5px',
-        marginBottom: '15px',
-        border: '1px solid #ddd',
-        borderRadius: '5px',
         fontSize: '16px',
-        boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.1)',
+        borderRadius: '5px',
+        border: '1px solid #ddd',
     },
     button: {
-        display: 'inline-block',
         padding: '12px 25px',
         fontSize: '16px',
-        border: 'none',
         borderRadius: '5px',
+        border: 'none',
         cursor: 'pointer',
-        transition: 'background-color 0.3s ease, transform 0.3s',
-        textAlign: 'center',
-        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
-    },
-    saveButton: {
-        backgroundColor: '#28a745',
-        color: 'white',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
     },
     editButton: {
         backgroundColor: '#007bff',
         color: 'white',
     },
-    iconButton: {
-        marginRight: '5px',
+    saveButton: {
+        backgroundColor: '#28a745',
+        color: 'white',
     },
     error: {
         color: 'red',
+        fontSize: '18px',
         textAlign: 'center',
+    },
+    loading: {
+        textAlign: 'center',
+        fontSize: '20px',
     }
 };
 

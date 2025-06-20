@@ -75,7 +75,7 @@ const OrderPage = () => {
 
   const columns = [
     {
-      
+
       title: "Sản phẩm",
       dataIndex: "product",
       key: "product",

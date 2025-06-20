@@ -1,6 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { Table, Button, Layout, Menu, Space, Modal, Form, Input, Select, Upload } from "antd";
-import { UserOutlined, ShoppingCartOutlined, LaptopOutlined, EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
+import {
+    Table, Button, Layout, Menu, Modal, Form, Input,
+    Select, Upload, message, Card, Row, Col
+} from "antd";
+import {
+    UserOutlined, ShoppingCartOutlined, LaptopOutlined, PlusOutlined,
+    LogoutOutlined, PieChartOutlined, DownloadOutlined, UploadOutlined
+} from '@ant-design/icons';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 import './AdminPage.css';
 
 const { Header, Sider, Content } = Layout;
@@ -8,419 +16,346 @@ const { Option } = Select;
 
 const AdminPage = () => {
     const [products, setProducts] = useState([]);
-    const [users, setUsers] = useState([]); 
-    const [isModalVisible, setIsModalVisible] = useState(false);
-    const [form] = Form.useForm();
-    const [editForm] = Form.useForm();
-    const [selectedMenuItem, setSelectedMenuItem] = useState('products');
-    const [editingUser, setEditingUser] = useState(null);
-    const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+    const [users, setUsers] = useState([]);
     const [orders, setOrders] = useState([]);
+    const [categories, setCategories] = useState([]);
+    const [selectedMenuItem, setSelectedMenuItem] = useState('products');
 
-    const handleEditClick = user => {
-        setEditingUser(user);
-        editForm.setFieldsValue(user);
-        setIsEditModalVisible(true);
-    };
+    const [isProductModalVisible, setIsProductModalVisible] = useState(false);
+    const [isUserModalVisible, setIsUserModalVisible] = useState(false);
+    const [isOrderModalVisible, setIsOrderModalVisible] = useState(false);
 
-    const handleDeleteClick = async (userId) => {
-        await fetch(`/delete/${userId}`, {
-            method: 'DELETE',
-        });
-        fetchUsers();
-    };
-
-    const handleEditOk = () => {
-        editForm.validateFields()
-            .then(values => {
-                editForm.resetFields();
-                fetch(`/update/${editingUser.id}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(values)
-                })
-                .then(response => response.json())
-                .then(data => {
-                    console.log('Success:', data);
-                    setUsers(users.map(user => user.id === data.id ? data : user));
-                    setIsEditModalVisible(false);
-                })
-                .catch((error) => {
-                    console.error('Error:', error);
-                });
-            })
-            .catch(info => {
-                console.log('Validate Failed:', info);
-            });
-    };
-
-    const handleEditCancel = () => {
-        setIsEditModalVisible(false);
-    };
-    const fetchOrders = () => {
-        const token = localStorage.getItem('token');
-        fetch('/api/payments/all', {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-            },
-        })
-            .then(response => response.json())
-            .then(data => {
-                setOrders(data); // setOrders là state quản lý danh sách đơn hàng
-            })
-            .catch(error => {
-                console.error('Error fetching orders:', error);
-            });
-    };
+    const [productForm] = Form.useForm();
+    const [userForm] = Form.useForm();
+    const [orderForm] = Form.useForm();
 
     useEffect(() => {
-        fetch("/api/products")
-            .then((response) => response.json())
-            .then((data) => setProducts(data))
-            .catch((error) => console.error("Error fetching products:", error));
-        fetchUsers();
-        fetchOrders();
+        fetchData();
     }, []);
 
-    const fetchUsers = () => {
-        const token = localStorage.getItem('token');
+    const fetchData = () => {
+        fetch("/api/products")
+            .then(res => res.json())
+            .then(setProducts)
+            .catch(console.error);
 
-        fetch('/api/users', {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-            },
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
-            setUsers(data);
-        })
-        .catch(error => {
-            console.error('Error fetching users:', error);
+        fetch("/api/categories")
+            .then(res => res.json())
+            .then(setCategories)
+            .catch(console.error);
+
+        const token = localStorage.getItem('token');
+        fetch('/api/users', { headers: { 'Authorization': `Bearer ${token}` } })
+            .then(res => res.json())
+            .then(setUsers)
+            .catch(console.error);
+
+        fetch('/api/payments/all', { headers: { 'Authorization': `Bearer ${token}` } })
+            .then(res => res.json())
+            .then(setOrders)
+            .catch(console.error);
+    };
+
+    const getCategoryName = (id) => {
+        const category = categories.find(c => String(c.id) === String(id));
+        return category ? category.name : "Unknown";
+    };
+
+    const handleAddProduct = () => {
+        productForm.validateFields().then(values => {
+            const productData = {
+                name: values.name,
+                categoryId: values.categoryId,
+                price: values.price,
+                sold: values.sold,
+                image: values.image?.file?.name || '',
+                rating: values.rating,
+                discount: values.discount,
+            };
+            fetch('/api/products/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(productData)
+            })
+                .then(res => res.json())
+                .then(data => {
+                    message.success("Thêm sản phẩm thành công");
+                    setProducts([...products, data]);
+                    setIsProductModalVisible(false);
+                    productForm.resetFields();
+                })
+                .catch(console.error);
         });
     };
 
-    const showModal = () => {
-        setIsModalVisible(true);
-    };
-
-    const handleOk = () => {
-        form.validateFields()
-            .then(values => {
-                form.resetFields();
-                const productData = {
-                    name: values.name,
-                    categoryId: values.type,
-                    price: values.price,
-                    sold: values.sold,
-                    image: values.image ? values.image[0].name : '',
-                    rating: values.rating,
-                    discount: values.discount,
-                };
-                fetch('/api/products/add', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(productData)
-                })
-                .then(response => response.json())
-                .then(data => {
-                    console.log('Success:', data);
-                    setProducts([...products, data]);
-                    setIsModalVisible(false);
-                })
-                .catch((error) => {
-                    console.error('Error:', error);
-                });
+    const handleAddUser = () => {
+        userForm.validateFields().then(values => {
+            const userData = {
+                userName: values.userName,
+                phoneNumber: values.phoneNumber,
+                address: values.address,
+                roles: values.roles
+            };
+            fetch('/api/users/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(userData)
             })
-            .catch(info => {
-                console.log('Validate Failed:', info);
-            });
+                .then(res => res.json())
+                .then(data => {
+                    message.success("Thêm người dùng thành công");
+                    setUsers([...users, data]);
+                    setIsUserModalVisible(false);
+                    userForm.resetFields();
+                })
+                .catch(console.error);
+        });
     };
 
-    const handleCancel = () => {
-        setIsModalVisible(false);
+    const handleAddOrder = () => {
+        orderForm.validateFields().then(values => {
+            const orderData = {
+                userId: values.userId,
+                amount: values.amount,
+                method: values.method,
+                address: {
+                    street: values.street,
+                    city: values.city,
+                    state: values.state
+                }
+            };
+            fetch('/api/payments/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(orderData)
+            })
+                .then(res => res.json())
+                .then(data => {
+                    message.success("Thêm đơn hàng thành công");
+                    setOrders([...orders, data]);
+                    setIsOrderModalVisible(false);
+                    orderForm.resetFields();
+                })
+                .catch(console.error);
+        });
     };
 
-    const handleMenuClick = e => {
-        setSelectedMenuItem(e.key);
-    };
+    const exportStatisticsToExcel = () => {
+        const totalRevenue = orders.reduce((sum, order) => sum + order.amount, 0);
+        const data = [
+            { "Chỉ tiêu": "Số lượng sản phẩm", "Giá trị": products.length },
+            { "Chỉ tiêu": "Số lượng người dùng", "Giá trị": users.length },
+            { "Chỉ tiêu": "Tổng đơn hàng", "Giá trị": orders.length },
+            { "Chỉ tiêu": "Tổng doanh thu", "Giá trị": totalRevenue }
+        ];
 
-    const userColumns = [
-        {
-            title: 'Gmail',
-            dataIndex: 'userName',
-            key: 'name',
-        },
-        {
-            title: 'Phone',
-            dataIndex: 'phoneNumber',
-            key: 'email',
-        },
-        {
-            title: 'Role',
-            dataIndex: 'roles',
-            key: 'email',
-        },
-        {
-            title: 'Address',
-            dataIndex: 'address',
-            key: 'address',
-        },
-        // {
-        //     title: 'Admin',
-        //     dataIndex: 'isAdmin',
-        //     key: 'isAdmin',
-        //     render: (text, record) => (record.isAdmin ? 'TRUE' : 'FALSE'),
-        // },
-        // {
-        //     title: 'Phone',
-        //     dataIndex: 'phone',
-        //     key: 'phone',
-        // },
-        {
-            title: 'Action',
-            key: 'action',
-            render: (text, record) => (
-                <Space size="middle">
-                    <Button type="primary" icon={<EditOutlined />} onClick = {() => handleEditClick(record)} />
-                    <Button type="danger" icon={<DeleteOutlined />} onClick={() => handleDeleteClick(record.id)} />
-                </Space>
-            ),
-        },
-    ];
+        const worksheet = XLSX.utils.json_to_sheet(data);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Thống kê");
+        const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+        const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
+        saveAs(blob, "ThongKe.xlsx");
+    };
 
     const productColumns = [
+        { title: 'Tên', dataIndex: 'name', key: 'name' },
+        { title: 'Giá', dataIndex: 'price', key: 'price' },
+        { title: 'Đánh giá', dataIndex: 'rating', key: 'rating' },
         {
-            title: 'Name',
-            dataIndex: 'name',
-            key: 'name',
-        },
-        {
-            title: 'Price',
-            dataIndex: 'price',
-            key: 'price',
-        },
-        {
-            title: 'Rating',
-            dataIndex: 'rating',
-            key: 'rating',
-        },
-        {
-            title: 'Type',
-            dataIndex: 'type',
-            key: 'type',
-        },
-        {
-            title: 'Action',
-            key: 'action',
-            render: (text, record) => (
-                <Space size="middle">
-                    <Button type="primary" icon={<EditOutlined />} />
-                    <Button type="danger" icon={<DeleteOutlined />} />
-                </Space>
-            ),
+            title: 'Danh mục', dataIndex: 'categoryId', key: 'categoryId',
+            render: (categoryId) => getCategoryName(categoryId)
         },
     ];
+
+    const userColumns = [
+        { title: 'Tên người dùng', dataIndex: 'userName', key: 'userName' },
+        { title: 'Số điện thoại', dataIndex: 'phoneNumber', key: 'phoneNumber' },
+        { title: 'Vai trò', dataIndex: 'roles', key: 'roles' },
+        { title: 'Địa chỉ', dataIndex: 'address', key: 'address' },
+    ];
+
     const orderColumns = [
+        { title: 'Mã đơn hàng', dataIndex: 'id', key: 'id' },
         {
-            title: 'Order ID',
-            dataIndex: 'id',
-            key: 'id',
+            title: 'Người mua', dataIndex: 'user', key: 'user',
+            render: (user) => `${user?.userName} (${user?.email})`
         },
+        { title: 'Tổng tiền', dataIndex: 'amount', key: 'amount' },
+        { title: 'Phương thức', dataIndex: 'method', key: 'method' },
         {
-            title: 'User',
-            dataIndex: 'user',
-            key: 'user',
-            render: (user) => `${user.userName} (${user.email})`,
-        },
-        {
-            title: 'Amount',
-            dataIndex: 'amount',
-            key: 'amount',
-        },
-        {
-            title: 'Method',
-            dataIndex: 'method',
-            key: 'method',
-        },
-        {
-            title: 'Address',
-            dataIndex: 'address',
-            key: 'address',
-            render: (text, record) => {
-                const address = record.address;
-                return address ? `${address.street}, ${address.city}, ${address.state}` : '';
-            }
-        },
-        {
-            title: 'Action',
-            key: 'action',
-            render: (text, record) => (
-                <Space size="middle">
-                    <Button type="primary" icon={<EditOutlined />} />
-                    <Button type="danger" icon={<DeleteOutlined />} />
-                </Space>
-            ),
-        },
+            title: 'Địa chỉ', dataIndex: 'address', key: 'address',
+            render: (address) => address ? `${address.street}, ${address.city}, ${address.state}` : ''
+        }
     ];
 
     const renderContent = () => {
+        if (selectedMenuItem === 'products') {
+            return (
+                <>
+                    <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsProductModalVisible(true)}>Thêm sản phẩm</Button>
+                    <Table dataSource={products} columns={productColumns} rowKey="id" pagination={{ pageSize: 5 }} />
+
+                    <Modal
+                        title="Thêm sản phẩm"
+                        open={isProductModalVisible}
+                        onOk={handleAddProduct}
+                        onCancel={() => setIsProductModalVisible(false)}
+                    >
+                        <Form form={productForm} layout="vertical">
+                            <Form.Item name="name" label="Tên sản phẩm" rules={[{ required: true }]}>
+                                <Input />
+                            </Form.Item>
+                            <Form.Item name="categoryId" label="Danh mục" rules={[{ required: true }]}>
+                                <Select placeholder="Chọn danh mục">
+                                    {categories.map(cat => (
+                                        <Option key={cat.id} value={cat.id}>{cat.name}</Option>
+                                    ))}
+                                </Select>
+                            </Form.Item>
+                            <Form.Item name="price" label="Giá" rules={[{ required: true }]}>
+                                <Input type="number" />
+                            </Form.Item>
+                            <Form.Item name="sold" label="Đã bán" initialValue={0}>
+                                <Input type="number" />
+                            </Form.Item>
+                            <Form.Item name="rating" label="Đánh giá" initialValue={5}>
+                                <Input type="number" />
+                            </Form.Item>
+                            <Form.Item name="discount" label="Giảm giá (%)" initialValue={0}>
+                                <Input type="number" />
+                            </Form.Item>
+                            <Form.Item name="image" label="Ảnh sản phẩm" valuePropName="file">
+                                <Upload beforeUpload={() => false} maxCount={1}>
+                                    <Button icon={<UploadOutlined />}>Chọn ảnh</Button>
+                                </Upload>
+                            </Form.Item>
+                        </Form>
+                    </Modal>
+                </>
+            );
+        }
+
         if (selectedMenuItem === 'users') {
             return (
-                <div className="user-management">
-                    <Button type="primary" style={{ marginBottom: '16px' }}>Export Excel</Button>
-                    <Table dataSource={users} columns={userColumns} pagination={{ pageSize: 5 }} />
-                </div>
+                <>
+                    <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsUserModalVisible(true)}>Thêm người dùng</Button>
+                    <Table dataSource={users} columns={userColumns} rowKey="id" pagination={{ pageSize: 5 }} />
+
+                    <Modal
+                        title="Thêm người dùng"
+                        open={isUserModalVisible}
+                        onOk={handleAddUser}
+                        onCancel={() => setIsUserModalVisible(false)}
+                    >
+                        <Form form={userForm} layout="vertical">
+                            <Form.Item name="userName" label="Tên người dùng" rules={[{ required: true }]}>
+                                <Input />
+                            </Form.Item>
+                            <Form.Item name="phoneNumber" label="Số điện thoại" rules={[{ required: true }]}>
+                                <Input />
+                            </Form.Item>
+                            <Form.Item name="address" label="Địa chỉ">
+                                <Input />
+                            </Form.Item>
+                            <Form.Item name="roles" label="Vai trò" initialValue="USER">
+                                <Select>
+                                    <Option value="USER">USER</Option>
+                                    <Option value="ADMIN">ADMIN</Option>
+                                </Select>
+                            </Form.Item>
+                        </Form>
+                    </Modal>
+                </>
             );
-        } else if (selectedMenuItem === 'products') {
+        }
+
+        if (selectedMenuItem === 'orders') {
             return (
-                <div className="product-management">
-                    <Button type="primary" shape="circle" icon={<PlusOutlined />} onClick={showModal} />
-                    <Button type="primary" style={{ marginLeft: '10px' }}>Export Excel</Button>
-                    <Table dataSource={products} columns={productColumns} pagination={{ pageSize: 5 }} />
-                </div>
+                <>
+                    <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsOrderModalVisible(true)}>Thêm đơn hàng</Button>
+                    <Table dataSource={orders} columns={orderColumns} rowKey="id" pagination={{ pageSize: 5 }} />
+
+                    <Modal
+                        title="Thêm đơn hàng"
+                        open={isOrderModalVisible}
+                        onOk={handleAddOrder}
+                        onCancel={() => setIsOrderModalVisible(false)}
+                    >
+                        <Form form={orderForm} layout="vertical">
+                            <Form.Item name="userId" label="Người dùng" rules={[{ required: true }]}>
+                                <Select placeholder="Chọn người dùng">
+                                    {users.map(user => (
+                                        <Option key={user.id} value={user.id}>{user.userName}</Option>
+                                    ))}
+                                </Select>
+                            </Form.Item>
+                            <Form.Item name="amount" label="Số tiền" rules={[{ required: true }]}>
+                                <Input type="number" />
+                            </Form.Item>
+                            <Form.Item name="method" label="Phương thức thanh toán" rules={[{ required: true }]}>
+                                <Select>
+                                    <Option value="COD">COD</Option>
+                                    <Option value="VNPAY">VNPAY</Option>
+                                </Select>
+                            </Form.Item>
+                            <Form.Item name="street" label="Đường" rules={[{ required: true }]}>
+                                <Input />
+                            </Form.Item>
+                            <Form.Item name="city" label="Thành phố" rules={[{ required: true }]}>
+                                <Input />
+                            </Form.Item>
+                            <Form.Item name="state" label="Quốc gia" rules={[{ required: true }]}>
+                                <Input />
+                            </Form.Item>
+                        </Form>
+                    </Modal>
+                </>
             );
-        } else if (selectedMenuItem === 'orders') {
+        }
+
+        if (selectedMenuItem === 'statistics') {
+            const totalRevenue = orders.reduce((sum, order) => sum + order.amount, 0);
             return (
-                <div className="order-management">
-                    <Button type="primary" style={{ marginBottom: '16px' }}>Export Excel</Button>
-                    <Table dataSource={orders} columns={orderColumns} pagination={{ pageSize: 5 }} />
-                </div>
+                <>
+                    <Row gutter={16} style={{ marginBottom: 20 }}>
+                        <Col span={6}><Card title="Sản phẩm" bordered><h2>{products.length}</h2></Card></Col>
+                        <Col span={6}><Card title="Người dùng" bordered><h2>{users.length}</h2></Card></Col>
+                        <Col span={6}><Card title="Đơn hàng" bordered><h2>{orders.length}</h2></Card></Col>
+                        <Col span={6}><Card title="Doanh thu" bordered><h2>{totalRevenue.toLocaleString()} VND</h2></Card></Col>
+                    </Row>
+                    <Button type="primary" icon={<DownloadOutlined />} onClick={exportStatisticsToExcel}>Xuất file Excel</Button>
+                </>
             );
-        } else {
-            return <div>Content will be added later</div>;
         }
     };
 
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('username');
+        window.location.href = "/login";
+    };
 
     return (
         <Layout style={{ minHeight: '100vh' }}>
-            <Header className="header">
-                <div className="logo">BOOK STORE</div>
+            <Header className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className="logo" style={{ fontSize: '20px', fontWeight: 'bold', color: '#fff' }}> BOOK STORE ADMIN</div>
+                <Button style={{ backgroundColor: '#ff4d4f', borderColor: '#ff4d4f' }} type="primary" icon={<LogoutOutlined />} onClick={handleLogout}>Đăng xuất</Button>
             </Header>
             <Layout>
-                <Sider width={200} className="site-layout-background">
-                    <Menu
-                        mode="inline"
-                        defaultSelectedKeys={['products']}
-                        selectedKeys={[selectedMenuItem]}
-                        onClick={handleMenuClick}
-                        style={{ height: '100%', borderRight: 0 }}
-                    >
-                        <Menu.Item key="users" icon={<UserOutlined />}>
-                            Người dùng
-                        </Menu.Item>
-                        <Menu.Item key="products" icon={<LaptopOutlined />}>
-                            Sản phẩm
-                        </Menu.Item>
-                        <Menu.Item key="orders" icon={<ShoppingCartOutlined />}>
-                            Đơn hàng
-                        </Menu.Item>
+                <Sider width={200}>
+                    <Menu mode="inline" selectedKeys={[selectedMenuItem]} onClick={(e) => setSelectedMenuItem(e.key)}>
+                        <Menu.Item key="products" icon={<LaptopOutlined />}>Sản phẩm</Menu.Item>
+                        <Menu.Item key="users" icon={<UserOutlined />}>Người dùng</Menu.Item>
+                        <Menu.Item key="orders" icon={<ShoppingCartOutlined />}>Đơn hàng</Menu.Item>
+                        <Menu.Item key="statistics" icon={<PieChartOutlined />}>Thống kê</Menu.Item>
                     </Menu>
                 </Sider>
                 <Layout style={{ padding: '0 24px 24px' }}>
-                    <Content
-                        style={{
-                            padding: 24,
-                            margin: 0,
-                            minHeight: 280,
-                        }}
-                    >
+                    <Content style={{ padding: 24, background: '#fff' }}>
                         {renderContent()}
                     </Content>
                 </Layout>
             </Layout>
-
-            <Modal title="Tạo sản phẩm" visible={isModalVisible} onOk={handleOk} onCancel={handleCancel}>
-                <Form form={form} layout="vertical" name="form_in_modal">
-                    <Form.Item
-                        name="name"
-                        label="Name"
-                        rules={[{ required: true, message: 'Please input the name of the product!' }]}
-                    >
-                        <Input />
-                    </Form.Item>
-                    <Form.Item
-                        name="type"
-                        label="Type"
-                        rules={[{ required: true, message: 'Please select the type of the product!' }]}
-                    >
-                        <Select placeholder="Select a type">
-                            <Option value="1">Category 1</Option>
-                            <Option value="2">Category 2</Option>
-                            <Option value="3">Category 3</Option>
-                        </Select>
-                    </Form.Item>
-                    <Form.Item
-                        name="price"
-                        label="Price"
-                        rules={[{ required: true, message: 'Please input the price of the product!' }]}
-                    >
-                        <Input type="number" />
-                    </Form.Item>
-                    <Form.Item
-                        name="sold"
-                        label="Sold"
-                        rules={[{ required: true, message: 'Please input the sold count!' }]}
-                    >
-                        <Input type="number" />
-                    </Form.Item>
-                    <Form.Item
-                        name="image"
-                        label="Image"
-                        valuePropName="fileList"
-                        getValueFromEvent={e => Array.isArray(e) ? e : e && e.fileList}
-                        rules={[{ required: true, message: 'Please select an image!' }]}
-                    >
-                        <Upload name="image" listType="picture" beforeUpload={() => false}>
-                            <Button>Select File</Button>
-                        </Upload>
-                    </Form.Item>
-                    <Form.Item
-                        name="rating"
-                        label="Rating"
-                        rules={[{ required: true, message: 'Please input the rating of the product!' }]}
-                    >
-                        <Input type="number" />
-                    </Form.Item>
-                    <Form.Item
-                        name="discount"
-                        label="Discount"
-                        rules={[{ required: true, message: 'Please input the discount of the product!' }]}
-                    >
-                        <Input type="number" />
-                    </Form.Item>
-                </Form>
-            </Modal>
-
-            <Modal title="Cập nhật thông tin người dùng" visible={isEditModalVisible} onOk={handleEditOk} onCancel={handleEditCancel}>
-                <Form form={editForm} layout="vertical" name="form_in_modal">
-                    <Form.Item
-                        name="phoneNumber"
-                        label="phone"
-                        rules={[{ required: true, message: 'Please input the email of the user!' }]}
-                    >
-                        <Input />
-                    </Form.Item>
-                    <Form.Item
-                        name="address"
-                        label="Address"
-                        rules={[{ required: true, message: 'Please input the phone number of the user!' }]}
-                    >
-                        <Input />
-                    </Form.Item>
-            
-                </Form>
-            </Modal>
-
         </Layout>
     );
 };

@@ -1,32 +1,366 @@
-import styled from "styled-components";
+import { Row } from 'antd';
+import styled from 'styled-components';
+
 import ButtonComponent from "../../components/ButtonComponent/ButtonComponent";
+
+export const WrapperPage = styled.div`
+    padding: 24px 120px;
+    background-color: #f5f5f5;
+    min-height: 100vh;
+    box-sizing: border-box;
+
+    @media (max-width: 768px) {
+        padding: 16px;
+    }
+`;
 
 export const WrapperTypeProduct = styled.div`
     display: flex;
+    justify-content: center;
     align-items: center;
-    gap: 24px;
-    justify-content: flex-start;
-    height: 44px;
-`
+    flex-wrap: wrap;
+    gap: 16px;
+    padding: 24px;
+    background: linear-gradient(135deg, #fff 0%, #f8fafc 100%);
+    border-radius: 16px;
+    box-shadow:
+            0 4px 12px rgba(0, 0, 0, 0.05),
+            0 1px 3px rgba(0, 0, 0, 0.1);
+    margin-bottom: 24px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
 
-export const WrapperButtonMore = styled(ButtonComponent)`
+    /* Subtle hover effect */
     &:hover {
-        color: #fff;
-        background: #9255FD;
-        span {
-            color: #fff;
+        box-shadow:
+                0 8px 24px rgba(0, 0, 0, 0.08),
+                0 2px 6px rgba(0, 0, 0, 0.12);
+        transform: translateY(-1px);
+    }
+
+    /* Decorative element */
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #1890ff, #52c41a, #faad14, #f5222d);
+        opacity: 0.8;
+    }
+
+    @media (max-width: 992px) {
+        padding: 20px 16px;
+        gap: 12px;
+    }
+
+    @media (max-width: 768px) {
+        justify-content: flex-start;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding: 16px;
+        gap: 12px;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        border-radius: 12px;
+
+        /* Fade effect at edges */
+        &::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 20px;
+            background: linear-gradient(to left, rgba(248, 250, 252, 1), transparent);
+            pointer-events: none;
+            z-index: 1;
         }
     }
-    width: 100%;
-    color: #9255FD;
-    text-align: center;
-    cursor: ${(props) => props.disabled ? 'not-allowed' : 'pointers'}
-`
+
+    @media (max-width: 480px) {
+        margin: 0 -16px 24px -16px;
+        border-radius: 0;
+        padding: 16px;
+
+        &::before {
+            display: none;
+        }
+    }
+
+    /* Hide scrollbar */
+    &::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Smooth scrolling */
+    scroll-behavior: smooth;
+`;
+
+// Thêm styled component cho từng item category
+export const CategoryItem = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: #fff;
+    border: 2px solid transparent;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    font-size: 14px;
+    white-space: nowrap;
+    box-shadow: 
+        0 2px 4px rgba(0, 0, 0, 0.04),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    position: relative;
+    overflow: hidden;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    letter-spacing: 0.3px;
+    color: #2c3e50;
+
+    /* Icon styling */
+    .anticon {
+        font-size: 16px;
+        transition: transform 0.3s ease;
+    }
+
+    /* Hover effects */
+    &:hover {
+        transform: translateY(-3px);
+        box-shadow: 
+            0 6px 20px rgba(24, 144, 255, 0.2),
+            inset 0 1px 0 rgba(255, 255, 255, 0.9),
+            0 1px 3px rgba(0, 0, 0, 0.1);
+        border-color: #1890ff;
+        background: linear-gradient(135deg, #fff 0%, #f0f8ff 100%);
+        text-shadow: 
+            0 1px 3px rgba(0, 0, 0, 0.15),
+            0 0 10px rgba(24, 144, 255, 0.3);
+        color: #1890ff;
+        font-weight: 700;
+        
+        .anticon {
+            transform: scale(1.15);
+            filter: drop-shadow(0 2px 4px rgba(24, 144, 255, 0.3));
+        }
+    }
+
+    /* Active state */
+    &.active {
+        background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+        color: #fff;
+        border-color: #1890ff;
+        box-shadow: 
+            0 6px 20px rgba(24, 144, 255, 0.4),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2),
+            inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+        text-shadow: 
+            0 1px 2px rgba(0, 0, 0, 0.3),
+            0 0 8px rgba(255, 255, 255, 0.3);
+        font-weight: 700;
+        transform: translateY(-1px);
+        
+        .anticon {
+            color: #fff;
+            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+        }
+    }
+
+    /* Focus state for accessibility */
+    &:focus-visible {
+        outline: 2px solid #1890ff;
+        outline-offset: 2px;
+    }
+
+    @media (max-width: 768px) {
+        padding: 10px 16px;
+        font-size: 13px;
+        min-width: fit-content;
+        
+        .anticon {
+            font-size: 14px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        padding: 8px 14px;
+        font-size: 12px;
+        
+        .anticon {
+            font-size: 12px;
+        }
+    }
+`;
+
+// Component cho text nổi bật đặc biệt
+export const HighlightText = styled.span`
+    background: linear-gradient(45deg, #1890ff, #52c41a, #faad14);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 800;
+    text-shadow: none;
+    animation: shimmer 3s ease-in-out infinite;
+    background-size: 200% 200%;
+    
+    @keyframes shimmer {
+        0%, 100% {
+            background-position: 0% 50%;
+        }
+        50% {
+            background-position: 100% 50%;
+        }
+    }
+`;
+
+// Component cho text có hiệu ứng 3D
+export const Text3D = styled.span`
+    color: #2c3e50;
+    text-shadow: 
+        1px 1px 0px #34495e,
+        2px 2px 0px #34495e,
+        3px 3px 0px #34495e,
+        4px 4px 8px rgba(0, 0, 0, 0.3);
+    font-weight: 700;
+    letter-spacing: 1px;
+    transform: perspective(500px) rotateX(15deg);
+    display: inline-block;
+    transition: all 0.3s ease;
+    
+    &:hover {
+        transform: perspective(500px) rotateX(0deg) scale(1.05);
+        text-shadow: 
+            1px 1px 0px #1890ff,
+            2px 2px 0px #1890ff,
+            3px 3px 0px #1890ff,
+            4px 4px 12px rgba(24, 144, 255, 0.5);
+        color: #1890ff;
+    }
+`;
+
+// Component cho text phát sáng
+export const GlowText = styled.span`
+    color: #fff;
+    text-shadow: 
+        0 0 5px #1890ff,
+        0 0 10px #1890ff,
+        0 0 15px #1890ff,
+        0 0 20px #1890ff,
+        0 0 35px #1890ff,
+        0 0 40px #1890ff;
+    font-weight: 700;
+    animation: glow 2s ease-in-out infinite alternate;
+    
+    @keyframes glow {
+        from {
+            text-shadow: 
+                0 0 5px #1890ff,
+                0 0 10px #1890ff,
+                0 0 15px #1890ff,
+                0 0 20px #1890ff,
+                0 0 35px #1890ff,
+                0 0 40px #1890ff;
+        }
+        to {
+            text-shadow: 
+                0 0 2px #52c41a,
+                0 0 5px #52c41a,
+                0 0 8px #52c41a,
+                0 0 12px #52c41a,
+                0 0 18px #52c41a,
+                0 0 25px #52c41a;
+        }
+    }
+`;
+
+// Loading skeleton cho categories
+export const CategorySkeleton = styled.div`
+    display: flex;
+    gap: 16px;
+    padding: 24px;
+    justify-content: center;
+    flex-wrap: wrap;
+
+    .skeleton-item {
+        width: 120px;
+        height: 44px;
+        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        background-size: 200% 100%;
+        animation: loading 1.5s infinite;
+        border-radius: 25px;
+    }
+
+    @keyframes loading {
+        0% {
+            background-position: 200% 0;
+        }
+        100% {
+            background-position: -200% 0;
+        }
+    }
+
+    @media (max-width: 768px) {
+        justify-content: flex-start;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        
+        .skeleton-item {
+            min-width: 100px;
+            width: 100px;
+        }
+    }
+`;
+
+
+
 
 export const WrapperProducts = styled.div`
     display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 24px;
-    margin-top:20=4px;
-    
-`
+    margin-top: 24px;
+`;
+
+export const WrapperButtonMore = styled(ButtonComponent)`
+    margin: 32px auto 0 auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 12px 28px;
+    font-weight: 600;
+    border-radius: 12px;
+    font-size: 16px;
+    border: none;
+    color: white;
+    background: linear-gradient(135deg, #9255FD 0%, #7b42f6 100%);
+    box-shadow: 0 4px 12px rgba(146, 85, 253, 0.3);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: ${(props) => (props.disabled ? 'not-allowed' : 'pointer')};
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(123, 66, 246, 0.4);
+    }
+
+    &:active {
+        transform: scale(0.98);
+    }
+`;
+export const FeaturedTitle = styled.h2`
+  font-size: 28px;
+  font-weight: bold;
+  color: #333;
+  margin: 40px 0 20px;
+`;
+
+export const WrapperFeatured = styled(Row)`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin-bottom: 40px;
+`;

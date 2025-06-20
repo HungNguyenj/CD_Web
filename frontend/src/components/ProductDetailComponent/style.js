@@ -77,3 +77,24 @@ export const WrapperInputNumber = styled(InputNumber)`
         }
     };
 `
+export const WrapperDescription = styled.div`
+  margin-top: 24px;
+  padding: 24px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+`;
+
+export const TitleDescription = styled.h3`
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+`;
+
+export const TextDescription = styled.p`
+  font-size: 16px;
+  line-height: 1.6;
+  color: #555;
+  white-space: pre-line;
+`;

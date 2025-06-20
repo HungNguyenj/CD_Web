@@ -1,17 +1,22 @@
 import React, { useState, useEffect } from "react";
-import { Badge, Col, Button, Dropdown, Menu, message } from 'antd';
+import { Badge, Col, Dropdown, Menu, message, Avatar, Button, Row } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import { WrapperHeader, WrapperTextHeader, WrapperHearderAccount, WrapperTextHeaderSmall } from './style';
 import {
-    UserOutlined, CaretDownOutlined, ShoppingCartOutlined,
+    UserOutlined,
+    CaretDownOutlined,
+    ShoppingCartOutlined,
+    BookOutlined,
+    AppstoreOutlined,
+    DownOutlined
 } from '@ant-design/icons';
 import ButtonInputSearch from "../ButtonInputSearch/ButtonInputSearch";
+import { HeaderContainer, WrapperHeader, WrapperTextHeader, WrapperTextHeaderSmall } from './style';
 
 const HeaderComponent = () => {
     const [username, setUsername] = useState(null);
-    const [isOpenPopup, setIsOpenPopup] = useState(false);
     const [cartCount, setCartCount] = useState(0);
     const [keyword, setKeyword] = useState('');
+    const [categories, setCategories] = useState([]);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -19,9 +24,16 @@ const HeaderComponent = () => {
         if (storedUsername) {
             setUsername(storedUsername);
         }
-
         const cartItems = JSON.parse(localStorage.getItem("cart_item")) || [];
         setCartCount(cartItems.length);
+        const data = [
+            { id: 1, name: "Tiểu thuyết" },
+            { id: 2, name: "Truyện ngắn" },
+            { id: 3, name: "Trinh thám"},
+            { id: 4, name: "Tình cảm" },
+            { id: 5, name: "Lịch sử" },
+        ];
+        setCategories(data);
     }, []);
 
     const handleLogout = () => {
@@ -29,6 +41,7 @@ const HeaderComponent = () => {
         localStorage.removeItem("token");
         setUsername(null);
         navigate("/login");
+        message.success("Đăng xuất thành công!");
     };
 
     const handleMenuClick = ({ key }) => {
@@ -46,24 +59,15 @@ const HeaderComponent = () => {
                 break;
         }
     };
+
     const handleSearch = (e) => {
         e.preventDefault();
-        navigate(`/search-results?keyword=${keyword}`);
+        if (keyword.trim()) {
+            navigate(`/search-results?keyword=${keyword}`);
+        } else {
+            message.warning("Vui lòng nhập từ khóa tìm kiếm");
+        }
     };
-
-    const menu = (
-        <Menu onClick={handleMenuClick}>
-            <Menu.Item key="profile">
-                Profile
-            </Menu.Item>
-            <Menu.Item key="orderInform">
-                OrderInform
-            </Menu.Item>
-            <Menu.Item key="logout">
-                Logout
-            </Menu.Item>
-        </Menu>
-    );
 
     const handleCartClick = () => {
         if (username) {
@@ -73,80 +77,116 @@ const HeaderComponent = () => {
         }
     };
 
-    const handleAccountClick = () => {
-        if (!username) {
-            message.error("Bạn cần đăng nhập để truy cập tài khoản");
-        }
-    };
-    const handleLogoClick = () => {
-        navigate("/");
-    };
     const handleLoginClick = () => {
         navigate("/login");
     };
 
+    const categoryMenu = (
+        <Menu onClick={({ key }) => navigate(`/category/${key}`)}>
+            {categories.map(category => (
+                <Menu.Item key={category.id}>{category.name}</Menu.Item>
+            ))}
+        </Menu>
+    );
+
+    const accountMenu = (
+        <Menu onClick={handleMenuClick} style={{ borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
+            <Menu.Item key="profile" icon={<UserOutlined />}>
+                Thông tin cá nhân
+            </Menu.Item>
+            <Menu.Item key="orderInform" icon={<ShoppingCartOutlined />}>
+                Đơn hàng của tôi
+            </Menu.Item>
+            <Menu.Divider />
+            <Menu.Item key="logout" danger>
+                Đăng xuất
+            </Menu.Item>
+        </Menu>
+    );
+
     return (
-        <div>
+        <HeaderContainer>
             <WrapperHeader>
-                <Col span={6} onClick={handleLogoClick} style={{ cursor: 'pointer' }}>
-                    <WrapperTextHeader>
-                        BookStore
-                    </WrapperTextHeader>
-                </Col>
-                <Col span={12}>
-                    <ButtonInputSearch
-                        size="large"
-                        bordered={false}
-                        textButton="Tìm kiếm"
-                        placeholder="input search text"
-                        onSearch={handleSearch}
-                        value={keyword}
-                        setValue={setKeyword}
-                    />
-                </Col>
-                <Col span={6} style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-                    <WrapperHearderAccount onClick={handleAccountClick}>
-                        {username ? (
-                            <Dropdown overlay={menu} trigger={['click']} onVisibleChange={(flag) => setIsOpenPopup(flag)}>
-                                <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-                                    <UserOutlined style={{ fontSize: '30px' }} />
-                                    <div>
-                                        <WrapperTextHeaderSmall>
-                                            {username}
-                                        </WrapperTextHeaderSmall>
-                                        <div>
-                                            <WrapperTextHeaderSmall>Tài khoản</WrapperTextHeaderSmall>
-                                            <CaretDownOutlined />
+                <Row align="middle" justify="space-between" style={{ width: '100%' }}>
+
+                    {/* Logo */}
+                    <Col>
+                        <div onClick={() => navigate("/")} style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                            <BookOutlined style={{ fontSize: '28px', marginRight: '8px', color: '#1890ff' }} />
+                            <WrapperTextHeader>BookStore</WrapperTextHeader>
+                        </div>
+                    </Col>
+
+                    {/* Danh mục sản phẩm */}
+                    <Col>
+                        <Dropdown overlay={categoryMenu} trigger={['click']}>
+                            <Button
+                                icon={<AppstoreOutlined />}
+                                style={{
+                                    border: 'none',
+                                    boxShadow: 'none',
+                                    borderRadius: '0px',
+                                    backgroundColor: 'transparent',
+                                    color: '#fff',
+                                    fontWeight: 500,
+                                    height: '40px',
+                                    padding: '0 20px'
+                                }}
+                            >
+                                Danh mục
+                            </Button>
+                        </Dropdown>
+
+
+                    </Col>
+
+                    {/* Search */}
+                    <Col style={{ flex: 1, marginLeft: '20px', marginRight: '20px' }}>
+                        <ButtonInputSearch
+                            size="large"
+                            bordered={false}
+                            textButton="Tìm kiếm"
+                            placeholder="Tìm kiếm sách, tác giả..."
+                            onSearch={handleSearch}
+                            value={keyword}
+                            setValue={setKeyword}
+                        />
+                    </Col>
+
+                    {/* Account + Cart */}
+                    <Col>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                            {username ? (
+                                <Dropdown overlay={accountMenu} trigger={['click']} placement="bottomRight">
+                                    <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                                        <Avatar size={36} icon={<UserOutlined />} style={{ backgroundColor: '#1890ff' }} />
+                                        <div style={{ marginLeft: '10px' }}>
+                                            <WrapperTextHeaderSmall>{username}</WrapperTextHeaderSmall>
+                                            <WrapperTextHeaderSmall>Tài khoản <CaretDownOutlined /></WrapperTextHeaderSmall>
                                         </div>
                                     </div>
-                                </div>
-                            </Dropdown>
-                        ) : (
-                            <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                                <UserOutlined style={{ fontSize: '30px' }} />
-                                <div>
-                                    <WrapperTextHeaderSmall onClick={handleLoginClick}>
-                                        Đăng nhập / Đăng ký
-                                    </WrapperTextHeaderSmall>
-                                    <div>
-                                        <WrapperTextHeaderSmall>Tài khoản</WrapperTextHeaderSmall>
-                                        <CaretDownOutlined />
+                                </Dropdown>
+                            ) : (
+                                <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }} onClick={handleLoginClick}>
+                                    <Avatar size={36} icon={<UserOutlined />} style={{ backgroundColor: '#1890ff' }} />
+                                    <div style={{ marginLeft: '10px' }}>
+                                        <WrapperTextHeaderSmall>Đăng nhập</WrapperTextHeaderSmall>
+                                        <WrapperTextHeaderSmall>Tài khoản</WrapperTextHeaderSmall>
                                     </div>
                                 </div>
+                            )}
+
+                            <div onClick={handleCartClick} style={{ cursor: 'pointer' }}>
+                                <Badge count={cartCount} size="small" style={{ backgroundColor: '#ff4d4f' }}>
+                                    <ShoppingCartOutlined style={{ fontSize: '24px', color: '#1890ff' }} />
+                                </Badge>
+                                <WrapperTextHeaderSmall>Giỏ hàng</WrapperTextHeaderSmall>
                             </div>
-                        )}
-                    </WrapperHearderAccount>
-                    <div onClick={handleCartClick} style={{ cursor: 'pointer' }}>
-                        <Badge count={cartCount} size="small">
-                            <ShoppingCartOutlined style={{ fontSize: '30px', color: '#fff' }} />
-                        </Badge>
-                        <WrapperTextHeaderSmall>
-                            Giỏ hàng
-                        </WrapperTextHeaderSmall>
-                    </div>
-                </Col>
+                        </div>
+                    </Col>
+                </Row>
             </WrapperHeader>
-        </div>
+        </HeaderContainer>
     );
 };
 

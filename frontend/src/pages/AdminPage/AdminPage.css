@@ -1,29 +1,37 @@
-/* src/AdminPage.css */
 .header {
     background: #1890ff;
     color: #fff;
-    font-size: 20px;
+    font-size: 26px;
     text-align: center;
     line-height: 64px;
-  }
-  
-  .logo {
-    color: #fff;
     font-weight: bold;
-  }
-  
-  .product-management {
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .add-product {
-    display: flex;
-    align-items: center;
-    margin-bottom: 20px;
-  }
-
-  .user-management, .product-management {
-    padding: 24px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
-  
+
+.logo {
+    font-size: 28px;
+}
+
+.content {
+    background: #fff;
+    padding: 24px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.table-container {
+    margin-top: 10px;
+}
+
+.ant-table {
+    border: 1px solid #f0f0f0;
+    border-radius: 8px;
+}
+
+.ant-btn-primary {
+    border-radius: 6px;
+}
+
+.ant-modal .ant-modal-content {
+    border-radius: 10px;
+}

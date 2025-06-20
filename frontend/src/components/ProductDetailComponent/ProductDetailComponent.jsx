@@ -1,166 +1,254 @@
-import { Button, Col, Image, Row,InputNumber } from "antd";
-import React, { useEffect, useState ,useContext} from "react";
-import { StarFilled, PlusOutlined, MinusOutlined } from '@ant-design/icons';
-import { WrapperStyleImageSmall, WrapperStyleColImage, WrapperStyleNameProduct, WrapperStyleTextSell, WrapperPriceProduct, WrapperPriceTextProduct, WrapperAddressProduct, WrapperQualityProduct, WrapperInputNumber } from "./style";
+import { Button, Col, Image, Row, InputNumber } from "antd";
+import React, { useEffect, useState } from "react";
+import { StarFilled, StarTwoTone } from '@ant-design/icons';
+import { WrapperStyleImageSmall, WrapperStyleColImage, WrapperStyleNameProduct, WrapperStyleTextSell, WrapperPriceProduct, WrapperPriceTextProduct, WrapperAddressProduct, WrapperQualityProduct, WrapperInputNumber, WrapperDescription, TitleDescription, TextDescription } from "./style";
 import ButtonComponent from "../ButtonComponent/ButtonComponent";
+import CardComponent from "../CardComponent/CardComponent";
 import { useParams, useNavigate } from "react-router-dom";
 
+
 const ProductDetailComponent = () => {
-    const { productId } = useParams(); // Lấy productId từ tham số
+    const { productId } = useParams();
     const [product, setProduct] = useState(null);
+    const [selectedQuantity, setSelectedQuantity] = useState(1);
     const [quantity, setQuantity] = useState(1);
     const navigate = useNavigate();
+    const [showMore, setShowMore] = useState(false);
+    const [suggestedProducts, setSuggestedProducts] = useState([]);
 
     useEffect(() => {
-        fetch(`/api/products/${productId}`) // Lấy thông tin chi tiết sản phẩm từ backend
+        fetch(`/api/products/${productId}`)
             .then((response) => response.json())
             .then((data) => setProduct(data))
             .catch((error) => console.error("Có lỗi xảy ra:", error));
-    }, [productId]); // Chỉ chạy khi productId thay đổi
+    }, [productId]);
+
+    useEffect(() => {
+        fetch(`/api/products/suggestions?productId=${parseInt(productId)}`)
+            .then((response) => response.json())
+            .then((data) => setSuggestedProducts(data))
+            .catch((error) => console.error("Có lỗi khi fetch gợi ý:", error));
+    }, [productId]);
 
     if (!product) {
-        return <div>Loading...</div>; // Hiển thị khi dữ liệu chưa tải xong
+        return <div>Loading...</div>;
     }
 
     const handleQuantityChange = (value) => {
-        // Cập nhật số lượng khi người dùng thay đổi
         setQuantity(value);
     };
 
     const isLoggedIn = () => {
-        // Giả sử bạn có logic kiểm tra đăng nhập tại đây
-        return !!localStorage.getItem('token'); // Ví dụ: kiểm tra xem có user trong localStorage không
+        return !!localStorage.getItem('token');
     };
 
-    const addToCart = (productId, quantity) => {
+    const addToCart = (productId, quantity, redirectToOrder = false) => {
         fetch(`/api/cart?productId=${productId}&quantity=${quantity}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             },
-            body: JSON.stringify({productId, quantity }),
+            body: JSON.stringify({ productId, quantity }),
         }).then((response) => {
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
             return response.json();
         })
-        .then((data) => {
-            navigate('/order');
-        })
-        .catch((error) => {
-            console.error("Có lỗi xảy ra:", error);
-        });
+            .then(() => {
+                if (redirectToOrder) {
+                    navigate('/order');
+                } else {
+                    navigate('/cart');
+                }
+            })
+            .catch((error) => {
+                console.error("Có lỗi xảy ra:", error);
+            });
     };
 
     const handleBuyNow = () => {
         if (!isLoggedIn()) {
-            navigate('/login'); // Chuyển đến trang đăng nhập nếu chưa đăng nhập
+            navigate('/login');
         } else {
-            addToCart(productId, quantity); // Thêm sản phẩm vào giỏ hàng nếu đã đăng nhập
+            navigate('/checkout', { state: { productId: product.id, quantity: selectedQuantity } });
+
+        }
+    };
+
+    const handleAddToCart = () => {
+        if (!isLoggedIn()) {
+            navigate('/login');
+        } else {
+            addToCart(productId, quantity, true);
         }
     };
 
     const imagePath = `/assets/images/${product.image}`;
 
-    const onChange = () => { }
+    const toggleShowMore = () => {
+        setShowMore(!showMore);
+    };
+
+    const shortDescription = product.description?.split(" ").slice(0, 30).join(" ") + (product.description?.split(" ").length > 30 ? "..." : "");
+
     return (
-        <Row style={{ padding: '16px', background: '#fff', borderRadius: '4px' }}>
-            <Col span={10} style={{ borderRight: '1px solid #e5e5e5', paddingRight: '8px' }}>
-                <Image src={imagePath} alt="product.name" preview={false} />
-                <Row style={{ padding: '10px', justifyContent: 'space-between' }}>
-                    <WrapperStyleColImage span={6}>
-                        <WrapperStyleImageSmall src={imagePath} alt="product.name" preview={false} />
-                    </WrapperStyleColImage>
+        <div style={{ padding: '40px 80px', background: '#f7f7f7' }}>
+            <Row style={{ padding: '24px', background: '#ffffff', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', marginBottom: '40px' }}>
+                <Col span={10} style={{ borderRight: '1px solid #f0f0f0', paddingRight: '24px' }}>
+                    <Image src={imagePath} alt={product.name} preview={false} style={{ borderRadius: '8px' }} />
+                    <Row style={{ padding: '10px', justifyContent: 'space-between', marginTop: '20px' }}>
+                        {[...Array(4)].map((_, i) => (
+                            <WrapperStyleColImage key={i} span={6}>
+                                <WrapperStyleImageSmall src={imagePath} alt={product.name} preview={false} />
+                            </WrapperStyleColImage>
+                        ))}
+                    </Row>
+                </Col>
+                <Col span={14} style={{ paddingLeft: '24px' }}>
+                    <WrapperStyleNameProduct style={{ fontSize: '28px' }}>{product.name}</WrapperStyleNameProduct>
+                    <div style={{ display: 'flex', alignItems: 'center', margin: '16px 0' }}>
+                        <span style={{ fontSize: '18px', marginRight: '8px', fontWeight: 'bold', color: '#ff4d4f' }}>{product.rating}</span>
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                            {[...Array(5)].map((_, index) => {
+                                const fullStar = Math.floor(product.rating);
+                                const isHalf = product.rating - fullStar >= 0.5 && index === fullStar;
+                                return (
+                                    <span key={index} style={{ marginRight: '2px' }}>
+                                        {index < fullStar ? (
+                                            <StarFilled style={{ fontSize: '24px', color: '#FFD700' }} />
+                                        ) : isHalf ? (
+                                            <StarTwoTone twoToneColor={['#FFD700', '#ccc']} style={{ fontSize: '24px' }} />
+                                        ) : (
+                                            <StarFilled style={{ fontSize: '24px', color: '#ccc' }} />
+                                        )}
+                                    </span>
+                                );
+                            })}
+                        </div>
+                        <WrapperStyleTextSell style={{ marginLeft: '16px', fontSize: '16px' }}>| Đã bán {product.sold}+</WrapperStyleTextSell>
+                    </div>
+                    <WrapperPriceProduct>
+                        <WrapperPriceTextProduct style={{ fontSize: '36px', color: '#ff4d4f' }}>
+                            {Math.round(product.price * (1 - product.discount / 100))} đ
+                        </WrapperPriceTextProduct>
+                        {product.discount > 0 && (
+                            <span style={{ marginLeft: '16px', textDecoration: 'line-through', color: '#888', fontSize: '20px' }}>
+            {product.price} đ
+        </span>
+                        )}
+                        {product.discount > 0 && (
+                            <span style={{ marginLeft: '12px', color: '#ff4d4f', fontWeight: 'bold', fontSize: '20px' }}>
+            -{product.discount}%
+        </span>
+                        )}
+                    </WrapperPriceProduct>
 
-                    <WrapperStyleColImage span={6}>
-                        <WrapperStyleImageSmall src={imagePath} alt="product.name" preview={false} />
-                    </WrapperStyleColImage>
+                    <WrapperAddressProduct style={{ margin: '16px 0' }}>
+                        <span style={{ fontWeight: '500' }}>Giao đến: </span>
+                        <span className="address">Q.Thủ Đức - TP.HCM</span>
+                        <span className="change-address"> Đổi địa chỉ</span>
+                    </WrapperAddressProduct>
+                    <div style={{ margin: '20px 0', padding: '20px 0', borderTop: '1px solid #f0f0f0', borderBottom: '1px solid #f0f0f0' }}>
+                        <div style={{ marginBottom: '12px', fontWeight: '500' }}>Số lượng</div>
+                        <WrapperQualityProduct>
+                            <InputNumber
+                                min={1}
+                                defaultValue={1}
+                                value={quantity}
+                                onChange={handleQuantityChange}
+                            />
+                        </WrapperQualityProduct>
 
-                    <WrapperStyleColImage span={6}>
-                        <WrapperStyleImageSmall src={imagePath} alt="product.name" preview={false} />
-                    </WrapperStyleColImage>
+                        {/* Thông tin chi tiết */}
+                        <div style={{ marginTop: '24px' }}>
+                            <div style={{ marginBottom: '12px', fontWeight: '700', fontSize: '22px' }}>Thông tin chi tiết</div>
+                            <div style={{ fontSize: '16px', lineHeight: '1.8' }}>
+                                <div><strong>Tác giả:</strong> {product.author || 'Đang cập nhật'}</div>
+                                <div><strong>Nhà xuất bản:</strong> {product.publisher || 'Đang cập nhật'}</div>
+                                <div><strong>Năm xuất bản:</strong> {product.publishYear || 'Đang cập nhật'}</div>
+                                <div><strong>Số trang:</strong> {product.pageCount ? `${product.pageCount} trang` : 'Đang cập nhật'}</div>
+                            </div>
+                        </div>
+                    </div>
 
-                    <WrapperStyleColImage span={6}>
-                        <WrapperStyleImageSmall src={imagePath} alt="product.name" preview={false} />
-                    </WrapperStyleColImage>
-                </Row>
-            </Col>
-            <Col span={14} style={{ paddingLeft: '6px' }}>
-                <WrapperStyleNameProduct>{product.name}</WrapperStyleNameProduct>
-                <div>
-                    <span style={{ marginRight: '5px' }}>{product.rating}</span>
-                    <StarFilled style={{ fontSize: '12px', color: 'yellow' }} />
-                    <StarFilled style={{ fontSize: '12px', color: 'yellow' }} />
-                    <StarFilled style={{ fontSize: '12px', color: 'yellow' }} />
-                    <StarFilled style={{ fontSize: '12px', color: 'yellow' }} />
-                    <WrapperStyleTextSell>  | Đã bán {product.sold}+</WrapperStyleTextSell>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        <ButtonComponent
+                            bordered={false}
+                            size={40}
+                            styleButton={{
+                                background: 'linear-gradient(90deg, #ff4d4f 0%, #ff7a45 100%)',
+                                height: '56px',
+                                width: '240px',
+                                border: 'none',
+                                borderRadius: '8px',
+                            }}
+                            textButton={'Mua ngay'}
+                            styleTextButton={{ color: '#fff', fontSize: '18px', fontWeight: '700' }}
+                            onClick={handleBuyNow}
+                        ></ButtonComponent>
+                        <ButtonComponent
+                            bordered={false}
+                            size={40}
+                            styleButton={{
+                                background: '#fff',
+                                height: '56px',
+                                width: '240px',
+                                border: '2px solid #1890ff',
+                                borderRadius: '8px',
+                            }}
+                            textButton={'Thêm vào giỏ hàng'}
+                            styleTextButton={{ color: '#1890ff', fontSize: '18px', fontWeight: '600' }}
+                            onClick={handleAddToCart}
+                        ></ButtonComponent>
+                    </div>
+                </Col>
+            </Row>
+
+            <WrapperDescription>
+                <TitleDescription style={{ fontSize: '20px' }}>Mô tả sản phẩm</TitleDescription>
+                <TextDescription style={{ fontSize: '16px' }}>
+                    {showMore ? product.description : shortDescription || 'Sản phẩm chưa có mô tả chi tiết.'}
+                </TextDescription>
+                {product.description?.split(" ").length > 30 && (
+                    <div style={{ textAlign: 'center', marginTop: '24px' }}>
+                        <button
+                            onClick={toggleShowMore}
+                            style={{
+                                padding: '14px 32px',
+                                fontSize: '16px',
+                                fontWeight: 'bold',
+                                color: '#fff',
+                                backgroundColor: '#007bff',
+                                border: 'none',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                transition: 'transform 0.2s ease',
+                            }}
+                            onMouseOver={e => e.currentTarget.style.transform = 'scale(1.1)'}
+                            onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
+                        >
+                            {showMore ? 'Thu gọn' : 'Xem thêm'}
+                        </button>
+                    </div>
+                )}
+            </WrapperDescription>
+
+            <div style={{ marginTop: '60px' }}>
+                <h2 style={{ fontSize: '24px', fontWeight: '700', marginBottom: '20px' }}>Gợi ý cho bạn</h2>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
+                    {suggestedProducts && suggestedProducts.length > 0 ? (
+                        suggestedProducts.map((item) => (
+                            <CardComponent key={item.id} product={item} />
+                        ))
+                    ) : (
+                        <p>Không có sản phẩm gợi ý</p>
+                    )}
                 </div>
-                <WrapperPriceProduct>
-                    <WrapperPriceTextProduct>
-                        {product.price} đ
-                    </WrapperPriceTextProduct>
-                </WrapperPriceProduct>
+            </div>
+        </div>
+    );
+};
 
-                <WrapperAddressProduct>
-                    <span> Giao đến </span>
-                    <span className="address"> Q.Thủ Đức - TP.HCM  </span>
-                    <span className="change-address"> Đổi địa chỉ</span>
-                </WrapperAddressProduct>
-
-
-
-                <div style={{ margin: '10px 0 20px', padding: '10px 0', borderTop: '1px solid #e5e5e5', borderBottom: '1px solid #e5e5e5' }}>
-                    <div style={{ marginBottom: '12px' }}>Số lượng</div>
-                    <WrapperQualityProduct>
-                        {/* Component InputNumber cho phép tăng giảm số lượng */}
-                        <InputNumber
-                            min={1}
-                            defaultValue={1}
-                            value={quantity}
-                            onChange={handleQuantityChange}
-                        />
-                    </WrapperQualityProduct>
-                </div>
-
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <ButtonComponent
-                        bordered={false}
-                        size={40}
-                        styleButton={{
-                            background: 'rgb(255,57,69) ',
-                            height: '48px',
-                            width: '220px',
-                            border: 'none',
-                            borderRadius: '4px',
-                        }}
-                        textButton={'Chọn mua'}
-                        styleTextButton={{ color: '#fff', fontSize: '15px', fontWeight: '700' }}
-                        onClick={handleBuyNow}
-                    >
-                    </ButtonComponent>
-
-                    <ButtonComponent
-                        bordered={false}
-                        size={40}
-                        styleButton={{
-                            background: '#fff ',
-                            height: '48px',
-                            width: '220px',
-                            border: 'solid 1px',
-                            borderRadius: '4px',
-                        }}
-                        textButton={'Mua trả sau'}
-                        styleTextButton={{ color: 'rgb(13,92,182) ', fontSize: '15px' }}
-                    >
-                    </ButtonComponent>
-                </div>
-
-            </Col>
-        </Row>
-    )
-}
-
-export default ProductDetailComponent
+export default ProductDetailComponent;
