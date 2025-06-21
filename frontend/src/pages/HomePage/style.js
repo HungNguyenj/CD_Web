@@ -16,88 +16,15 @@ export const WrapperPage = styled.div`
 
 export const WrapperTypeProduct = styled.div`
     display: flex;
-    justify-content: center;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 16px;
-    padding: 24px;
-    background: linear-gradient(135deg, #fff 0%, #f8fafc 100%);
-    border-radius: 16px;
-    box-shadow:
-            0 4px 12px rgba(0, 0, 0, 0.05),
-            0 1px 3px rgba(0, 0, 0, 0.1);
-    margin-bottom: 24px;
-    border: 1px solid rgba(0, 0, 0, 0.06);
-    position: relative;
-    overflow: hidden;
-    transition: all 0.3s ease;
-
-    /* Subtle hover effect */
-    &:hover {
-        box-shadow:
-                0 8px 24px rgba(0, 0, 0, 0.08),
-                0 2px 6px rgba(0, 0, 0, 0.12);
-        transform: translateY(-1px);
-    }
-
-    /* Decorative element */
-    &::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 3px;
-        background: linear-gradient(90deg, #1890ff, #52c41a, #faad14, #f5222d);
-        opacity: 0.8;
-    }
-
-    @media (max-width: 992px) {
-        padding: 20px 16px;
-        gap: 12px;
-    }
-
-    @media (max-width: 768px) {
+    gap: 24px;
         justify-content: flex-start;
+    border-bottom: 1px solid rgb(242, 242, 242);
+    padding: 0 0 10px;
         overflow-x: auto;
-        flex-wrap: nowrap;
-        padding: 16px;
-        gap: 12px;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-        border-radius: 12px;
-
-        /* Fade effect at edges */
-        &::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            width: 20px;
-            background: linear-gradient(to left, rgba(248, 250, 252, 1), transparent);
-            pointer-events: none;
-            z-index: 1;
-        }
-    }
-
-    @media (max-width: 480px) {
-        margin: 0 -16px 24px -16px;
-        border-radius: 0;
-        padding: 16px;
-
-        &::before {
-            display: none;
-        }
-    }
-
-    /* Hide scrollbar */
     &::-webkit-scrollbar {
-        display: none;
+        height: 0;
     }
-
-    /* Smooth scrolling */
-    scroll-behavior: smooth;
 `;
 
 // Thêm styled component cho từng item category
@@ -316,51 +243,32 @@ export const CategorySkeleton = styled.div`
     }
 `;
 
-
-
-
 export const WrapperProducts = styled.div`
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 24px;
-    margin-top: 24px;
+    display: flex;
+    gap: 14px;
+    margin-top:20px;
+    flex-wrap: wrap;
 `;
 
-export const WrapperButtonMore = styled(ButtonComponent)`
-    margin: 32px auto 0 auto;
+export const WrapperButtonMore = styled.div`
     display: flex;
     justify-content: center;
-    align-items: center;
-    padding: 12px 28px;
-    font-weight: 600;
-    border-radius: 12px;
-    font-size: 16px;
-    border: none;
-    color: white;
-    background: linear-gradient(135deg, #9255FD 0%, #7b42f6 100%);
-    box-shadow: 0 4px 12px rgba(146, 85, 253, 0.3);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    cursor: ${(props) => (props.disabled ? 'not-allowed' : 'pointer')};
-
-    &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(123, 66, 246, 0.4);
-    }
-
-    &:active {
-        transform: scale(0.98);
-    }
+    margin-top: 20px;
 `;
+
+export const WrapperFeatured = styled.div`
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    margin-top: 20px;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03),
+                0 1px 6px -1px rgba(0, 0, 0, 0.02),
+                0 2px 4px 0 rgba(0, 0, 0, 0.02);
+`;
+
 export const FeaturedTitle = styled.h2`
-  font-size: 28px;
-  font-weight: bold;
+    font-size: 24px;
   color: #333;
-  margin: 40px 0 20px;
-`;
-
-export const WrapperFeatured = styled(Row)`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 24px;
-  margin-bottom: 40px;
+    margin-bottom: 20px;
+    text-align: center;
 `;

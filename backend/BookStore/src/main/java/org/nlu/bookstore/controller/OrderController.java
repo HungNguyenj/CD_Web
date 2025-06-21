@@ -24,10 +24,10 @@ public class OrderController {
     OrderService orderService;
     OrderItemService orderItemService;
 
-    @PostMapping("/{userId}")
-    ResponseEntity<ApiResponse<OrderResponse>> createOrderFromCart(@PathVariable Long userId, @RequestBody OrderRequest request) {
+    @PostMapping()
+    ResponseEntity<ApiResponse<OrderResponse>> createOrderFromCart(@RequestBody OrderRequest request) {
         ApiResponse<OrderResponse> apiResponse = ApiResponse.<OrderResponse>builder()
-                .data(orderService.createOrderFromCart(userId, request))
+                .data(orderService.createOrderFromCart(request))
                 .build();
         return ResponseEntity.ok().body(apiResponse);
     }
@@ -41,10 +41,18 @@ public class OrderController {
         return ResponseEntity.ok().body(apiResponse);
     }
 
-    @GetMapping("/{userId}")
-    ResponseEntity<ApiResponse<List<OrderResponse>>> getUserOrders(@PathVariable Long userId) {
+    @GetMapping("/all")
+    ResponseEntity<ApiResponse<List<OrderResponse>>> getAllOrders() {
         ApiResponse<List<OrderResponse>> apiResponse = ApiResponse.<List<OrderResponse>>builder()
-                .data(orderService.getUserOrders(userId))
+                .data(orderService.getAll())
+                .build();
+        return ResponseEntity.ok().body(apiResponse);
+    }
+
+    @GetMapping()
+    ResponseEntity<ApiResponse<List<OrderResponse>>> getUserOrders() {
+        ApiResponse<List<OrderResponse>> apiResponse = ApiResponse.<List<OrderResponse>>builder()
+                .data(orderService.getUserOrders())
                 .build();
         return ResponseEntity.ok().body(apiResponse);
     }
@@ -64,4 +72,11 @@ public class OrderController {
         return ResponseEntity.ok().body(apiResponse);
     }
 
+    @GetMapping("/sizes")
+    ResponseEntity<ApiResponse<Integer>> getOrderSizes() {
+        return ResponseEntity.ok()
+                .body(ApiResponse.<Integer>builder()
+                        .data(orderService.getAllSize())
+                        .build());
+    }
 }

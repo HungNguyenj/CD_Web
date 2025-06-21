@@ -3,6 +3,7 @@ package org.nlu.bookstore.service;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.nlu.bookstore.dto.request.CartItemRequest;
 import org.nlu.bookstore.dto.request.CartItemUpdateRequest;
 import org.nlu.bookstore.dto.response.CartItemListResponse;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -34,6 +36,7 @@ public class CartItemService {
     public CartItemListResponse getUserCart() {
         var context = SecurityContextHolder.getContext();
         String username = context.getAuthentication().getName();
+        log.info(username);
 
         var user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
@@ -96,7 +99,14 @@ public class CartItemService {
         }
         item.setQuantity(item.getQuantity() + request.getQuantity());
 
-        return cartItemMapper.toCartItemResponse(cartItemRepository.save(item));
+        CartItem result = cartItemRepository.save(item);
+
+        return CartItemResponse.builder()
+                .id(result.getId())
+                .user(result.getUser())
+                .product(result.getProduct())
+                .quantity(result.getQuantity())
+                .build();
     }
 
     public void deleteCartItem(Long cartItemId) {

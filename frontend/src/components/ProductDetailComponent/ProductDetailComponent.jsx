@@ -1,11 +1,13 @@
-import { Button, Col, Image, Row, InputNumber } from "antd";
+import { Button, Col, Image, Row, InputNumber, message } from "antd";
 import React, { useEffect, useState } from "react";
 import { StarFilled, StarTwoTone } from '@ant-design/icons';
 import { WrapperStyleImageSmall, WrapperStyleColImage, WrapperStyleNameProduct, WrapperStyleTextSell, WrapperPriceProduct, WrapperPriceTextProduct, WrapperAddressProduct, WrapperQualityProduct, WrapperInputNumber, WrapperDescription, TitleDescription, TextDescription } from "./style";
 import ButtonComponent from "../ButtonComponent/ButtonComponent";
 import CardComponent from "../CardComponent/CardComponent";
 import { useParams, useNavigate } from "react-router-dom";
-
+import axiosInstance from "../../api/axiosConfig";
+import { API_ENDPOINTS } from "../../constants/apiEndpoints";
+import { getImageUrl } from "../../utils/imageUtils";
 
 const ProductDetailComponent = () => {
     const { productId } = useParams();
@@ -17,17 +19,30 @@ const ProductDetailComponent = () => {
     const [suggestedProducts, setSuggestedProducts] = useState([]);
 
     useEffect(() => {
-        fetch(`/api/products/${productId}`)
-            .then((response) => response.json())
-            .then((data) => setProduct(data))
-            .catch((error) => console.error("Có lỗi xảy ra:", error));
+        const fetchProduct = async () => {
+            try {
+                const data = await axiosInstance.get(API_ENDPOINTS.PRODUCT_BY_ID(productId));
+                setProduct(data);
+            } catch (error) {
+                console.error("Error fetching product:", error);
+                message.error("Không thể tải thông tin sản phẩm");
+            }
+        };
+        fetchProduct();
     }, [productId]);
 
     useEffect(() => {
-        fetch(`/api/products/suggestions?productId=${parseInt(productId)}`)
-            .then((response) => response.json())
-            .then((data) => setSuggestedProducts(data))
-            .catch((error) => console.error("Có lỗi khi fetch gợi ý:", error));
+        const fetchSuggestions = async () => {
+            try {
+                const data = await axiosInstance.get(API_ENDPOINTS.PRODUCT_SUGGESTIONS, {
+                    params: { productId: parseInt(productId) }
+                });
+                setSuggestedProducts(data);
+            } catch (error) {
+                console.error("Error fetching suggestions:", error);
+            }
+        };
+        fetchSuggestions();
     }, [productId]);
 
     if (!product) {
@@ -42,30 +57,22 @@ const ProductDetailComponent = () => {
         return !!localStorage.getItem('token');
     };
 
-    const addToCart = (productId, quantity, redirectToOrder = false) => {
-        fetch(`/api/cart?productId=${productId}&quantity=${quantity}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify({ productId, quantity }),
-        }).then((response) => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-            .then(() => {
+    const addToCart = async (productId, quantity, redirectToOrder = false) => {
+        try {
+            await axiosInstance.post(API_ENDPOINTS.CART, {
+                productId,
+                quantity
+            });
+            message.success("Đã thêm sản phẩm vào giỏ hàng!");
                 if (redirectToOrder) {
                     navigate('/order');
                 } else {
                     navigate('/cart');
                 }
-            })
-            .catch((error) => {
-                console.error("Có lỗi xảy ra:", error);
-            });
+        } catch (error) {
+            console.error("Error adding to cart:", error);
+            message.error("Không thể thêm sản phẩm vào giỏ hàng");
+        }
     };
 
     const handleBuyNow = () => {
@@ -73,7 +80,6 @@ const ProductDetailComponent = () => {
             navigate('/login');
         } else {
             navigate('/checkout', { state: { productId: product.id, quantity: selectedQuantity } });
-
         }
     };
 
@@ -85,7 +91,7 @@ const ProductDetailComponent = () => {
         }
     };
 
-    const imagePath = `/assets/images/${product.image}`;
+    const imagePath = getImageUrl(product.image);
 
     const toggleShowMore = () => {
         setShowMore(!showMore);
@@ -175,7 +181,6 @@ const ProductDetailComponent = () => {
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                         <ButtonComponent
-                            bordered={false}
                             size={40}
                             styleButton={{
                                 background: 'linear-gradient(90deg, #ff4d4f 0%, #ff7a45 100%)',
@@ -189,17 +194,17 @@ const ProductDetailComponent = () => {
                             onClick={handleBuyNow}
                         ></ButtonComponent>
                         <ButtonComponent
-                            bordered={false}
                             size={40}
                             styleButton={{
                                 background: '#fff',
                                 height: '56px',
                                 width: '240px',
-                                border: '2px solid #1890ff',
+                                border: '1px solid #ff4d4f',
                                 borderRadius: '8px',
+                                color: '#ff4d4f'
                             }}
                             textButton={'Thêm vào giỏ hàng'}
-                            styleTextButton={{ color: '#1890ff', fontSize: '18px', fontWeight: '600' }}
+                            styleTextButton={{ color: '#ff4d4f', fontSize: '18px', fontWeight: '700' }}
                             onClick={handleAddToCart}
                         ></ButtonComponent>
                     </div>

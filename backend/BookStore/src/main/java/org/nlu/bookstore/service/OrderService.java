@@ -16,6 +16,10 @@ import org.nlu.bookstore.mapper.OrderMapper;
 import org.nlu.bookstore.repository.CartItemRepository;
 import org.nlu.bookstore.repository.OrderRepository;
 import org.nlu.bookstore.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -26,18 +30,22 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class OrderService {
 
+    private static final Logger log = LoggerFactory.getLogger(OrderService.class);
     OrderRepository orderRepository;
     CartItemService cartItemService;
     CartItemRepository cartItemRepository;
     UserRepository userRepository;
     OrderMapper orderMapper;
 
-    public OrderResponse createOrderFromCart(Long userId, OrderRequest request) {
-        User user = userRepository.findById(userId)
+    public OrderResponse createOrderFromCart(OrderRequest request) {
+        var context = SecurityContextHolder.getContext();
+        String  username = context.getAuthentication().getName();
+
+        User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
         //lay gio hang
-        List<CartItem> cartItems = cartItemRepository.findAllByUserId(userId);
+        List<CartItem> cartItems = cartItemRepository.findAllByUserId(user.getId());
         if (cartItems.isEmpty())
             throw new AppException(ErrorCode.CART_EMPTY);
 
@@ -54,6 +62,7 @@ public class OrderService {
                 .address(request.getAddress())
                 .note(request.getNote())
                 .phone(request.getPhone())
+                .paymentMethod(request.getPaymentMethod())
                 .build();
 
         // Tạo các order item
@@ -69,7 +78,7 @@ public class OrderService {
         order.setOrderItems(orderItems);
 
         // xoa gio hang
-        cartItemService.clearUserCart(userId);
+        cartItemService.clearUserCart(user.getId());
 
         return orderMapper.toOrderResponse(orderRepository.save(order));
     }
@@ -82,8 +91,11 @@ public class OrderService {
         return orderMapper.toOrderResponse(orderRepository.save(order));
     }
 
-    public List<OrderResponse> getUserOrders(Long userId) {
-        User user = userRepository.findById(userId)
+    public List<OrderResponse> getUserOrders() {
+        var context = SecurityContextHolder.getContext();
+        String  username = context.getAuthentication().getName();
+
+        User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
         List<Order> orders = orderRepository.findAllByUserId(user.getId());
@@ -100,5 +112,21 @@ public class OrderService {
 
         order.setStatus(OrderStatus.CANCELLED);
         orderRepository.save(order);
+    }
+
+
+    public List<OrderResponse> getAll() {
+        List<User> users = userRepository.findAll();
+        List<Order> orders = users.stream()
+                .map(user -> {
+                    return (Order) orderRepository.findAllByUserId(user.getId());
+                }).toList();
+        log.info(orders.size() + "");
+        return orders.stream().map(orderMapper::toOrderResponse).toList();
+    }
+
+    public int getAllSize() {
+        List<Order> orders = orderRepository.findAll();
+        return orders.size();
     }
 }

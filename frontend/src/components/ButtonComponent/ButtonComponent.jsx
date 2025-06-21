@@ -9,12 +9,14 @@ const ButtonComponent = ({
                              disabled,
                              ...rests
                          }) => {
+    const buttonStyle = {
+        ...styleButton,
+        background: disabled ? '#ccc' : (styleButton?.background || '#9255FD'),
+    };
+
     return (
         <Button
-            style={{
-                ...styleButton,
-                background: disabled ? '#ccc' : (styleButton?.background || '#9255FD'),
-            }}
+            style={buttonStyle}
             size={size}
             disabled={disabled}
             {...rests}

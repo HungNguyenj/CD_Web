@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from "react";
 import NavBarComponent from "../../components/NavbarComponent/NavbarComponent";
 import CardComponent from "../../components/CardComponent/CardComponent";
-import { Pagination, Row, Col, Select, Input, Spin, Card, Divider, InputNumber, Button } from 'antd';
+import { Pagination, Row, Col, Select, Input, Spin, Card, Divider, InputNumber, Button, message } from 'antd';
 import { WrapperProducts, WrapperNavbar } from "./style";
 import { useParams, useNavigate } from "react-router-dom";
+import axiosInstance from "../../api/axiosConfig";
+import { API_ENDPOINTS } from "../../constants/apiEndpoints";
 
 const { Option } = Select;
+const { Search } = Input;
 
 const TypeProductPage = () => {
     const { categoryId } = useParams();
@@ -20,40 +23,58 @@ const TypeProductPage = () => {
     const [loading, setLoading] = useState(false);
     const [minPrice, setMinPrice] = useState(null);
     const [maxPrice, setMaxPrice] = useState(null);
+    const [sortBy, setSortBy] = useState('default');
+    const [priceRange, setPriceRange] = useState({ min: null, max: null });
+
+    const fetchCategoryName = async () => {
+        try {
+            const response = await axiosInstance.get(`${API_ENDPOINTS.CATEGORY_BY_ID(categoryId)}`);
+            setCategoryName(response.name);
+        } catch (error) {
+            console.error("Error fetching category name:", error);
+        }
+    };
+
+    const fetchProducts = async () => {
+            setLoading(true);
+        try {
+            let endpoint = API_ENDPOINTS.PRODUCTS_BY_CATEGORY(categoryId);
+            if (priceRange.min !== null && priceRange.max !== null) {
+                endpoint = `${API_ENDPOINTS.PRODUCTS_BY_PRICE(categoryId)}?minPrice=${priceRange.min}&maxPrice=${priceRange.max}`;
+            }
+            const response = await axiosInstance.get(endpoint);
+            let sortedProducts = [...response];
+            
+            switch (sortBy) {
+                case 'price-asc':
+                    sortedProducts.sort((a, b) => (a.price * (1 - a.discount)) - (b.price * (1 - b.discount)));
+                    break;
+                case 'price-desc':
+                    sortedProducts.sort((a, b) => (b.price * (1 - b.discount)) - (a.price * (1 - a.discount)));
+                    break;
+                case 'sold':
+                    sortedProducts.sort((a, b) => b.sold - a.sold);
+                    break;
+                case 'rating':
+                    sortedProducts.sort((a, b) => b.rating - a.rating);
+                    break;
+                default:
+                    break;
+            }
+            
+            setProducts(sortedProducts);
+        } catch (error) {
+            console.error("Error fetching products:", error);
+            message.error("Không thể tải danh sách sản phẩm");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchProducts = () => {
-            setLoading(true);
-            let apiUrl = "";
-            if (categoryId === "all") {
-                apiUrl = "/api/products"; // API lấy tất cả sản phẩm
-            } else {
-                apiUrl = `/api/categories/${categoryId}`;
-            }
-
-            fetch(apiUrl)
-                .then((response) => response.json())
-                .then((data) => {
-                    if (categoryId === "all") {
-                        setInitialProducts(data); // data là mảng sản phẩm
-                        setProducts(data);
-                        setCategoryName("Tất cả sản phẩm");
-                    } else if (data && Array.isArray(data.products)) {
-                        setInitialProducts(data.products);
-                        setProducts(data.products);
-                        setCategoryName(data.categoryName);
-                    } else {
-                        setInitialProducts([]);
-                        setProducts([]);
-                        setCategoryName("");
-                    }
-                })
-                .catch((error) => console.error("Có lỗi xảy ra:", error))
-                .finally(() => setLoading(false));
-        };
         fetchProducts();
-    }, [categoryId]);
-
+        fetchCategoryName();
+    }, [categoryId]); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
         let filteredProducts = [...initialProducts];
@@ -90,6 +111,25 @@ const TypeProductPage = () => {
     };
 
     const currentProducts = products.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+    const handleSortChange = (value) => {
+        setSortBy(value);
+        fetchProducts();
+    };
+
+    const handlePriceFilter = () => {
+        if (priceRange.min > priceRange.max) {
+            message.error("Giá tối thiểu không thể lớn hơn giá tối đa");
+            return;
+        }
+        fetchProducts();
+    };
+
+    const handleResetFilter = () => {
+        setPriceRange({ min: null, max: null });
+        setSortBy('default');
+        fetchProducts();
+    };
 
     return (
         <div style={{ padding: '40px 80px', background: '#f7f7f7', minHeight: '100vh' }}>

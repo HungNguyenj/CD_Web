@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {
     Table, Button, Layout, Menu, Modal, Form, Input,
-    Select, Upload, message, Card, Row, Col
+    Select, Upload, message, Card, Row, Col, Spin, Image
 } from "antd";
 import {
     UserOutlined, ShoppingCartOutlined, LaptopOutlined, PlusOutlined,
@@ -10,6 +10,9 @@ import {
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import './AdminPage.css';
+import axiosInstance from '../../api/axiosConfig';
+import { API_ENDPOINTS } from '../../constants/apiEndpoints';
+import { getImageUrl } from '../../utils/imageUtils';
 
 const { Header, Sider, Content } = Layout;
 const { Option } = Select;
@@ -20,6 +23,7 @@ const AdminPage = () => {
     const [orders, setOrders] = useState([]);
     const [categories, setCategories] = useState([]);
     const [selectedMenuItem, setSelectedMenuItem] = useState('products');
+    const [loading, setLoading] = useState(false);
 
     const [isProductModalVisible, setIsProductModalVisible] = useState(false);
     const [isUserModalVisible, setIsUserModalVisible] = useState(false);
@@ -33,36 +37,37 @@ const AdminPage = () => {
         fetchData();
     }, []);
 
-    const fetchData = () => {
-        fetch("/api/products")
-            .then(res => res.json())
-            .then(setProducts)
-            .catch(console.error);
+    const fetchData = async () => {
+        setLoading(true);
+        try {
+            const [productsRes, categoriesRes, usersRes, ordersRes] = await Promise.all([
+                axiosInstance.get(API_ENDPOINTS.PRODUCTS),
+                axiosInstance.get(API_ENDPOINTS.CATEGORIES),
+                axiosInstance.get(API_ENDPOINTS.USERS),
+                axiosInstance.get(API_ENDPOINTS.ORDERS)
+            ]);
 
-        fetch("/api/categories")
-            .then(res => res.json())
-            .then(setCategories)
-            .catch(console.error);
-
-        const token = localStorage.getItem('token');
-        fetch('/api/users', { headers: { 'Authorization': `Bearer ${token}` } })
-            .then(res => res.json())
-            .then(setUsers)
-            .catch(console.error);
-
-        fetch('/api/payments/all', { headers: { 'Authorization': `Bearer ${token}` } })
-            .then(res => res.json())
-            .then(setOrders)
-            .catch(console.error);
+            setProducts(Array.isArray(productsRes) ? productsRes : []);
+            setCategories(Array.isArray(categoriesRes) ? categoriesRes : []);
+            setUsers(Array.isArray(usersRes) ? usersRes : []);
+            setOrders(Array.isArray(ordersRes) ? ordersRes : []);
+        } catch (error) {
+            console.error('Error fetching data:', error);
+            message.error('Không thể tải dữ liệu. Vui lòng thử lại sau.');
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const getCategoryName = (id) => {
-        const category = categories.find(c => String(c.id) === String(id));
-        return category ? category.name : "Unknown";
+    const getCategoryName = (categoryId) => {
+        if (!categoryId) return "Chưa phân loại";
+        const category = categories.find(c => String(c.id) === String(categoryId));
+        return category ? category.name : "Chưa phân loại";
     };
 
-    const handleAddProduct = () => {
-        productForm.validateFields().then(values => {
+    const handleAddProduct = async () => {
+        try {
+            const values = await productForm.validateFields();
             const productData = {
                 name: values.name,
                 categoryId: values.categoryId,
@@ -72,81 +77,86 @@ const AdminPage = () => {
                 rating: values.rating,
                 discount: values.discount,
             };
-            fetch('/api/products/add', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(productData)
-            })
-                .then(res => res.json())
-                .then(data => {
-                    message.success("Thêm sản phẩm thành công");
-                    setProducts([...products, data]);
-                    setIsProductModalVisible(false);
-                    productForm.resetFields();
-                })
-                .catch(console.error);
-        });
+
+            const response = await axiosInstance.post(API_ENDPOINTS.PRODUCTS, productData);
+            if (response) {
+                message.success("Thêm sản phẩm thành công");
+                setProducts([...products, response]);
+                setIsProductModalVisible(false);
+                productForm.resetFields();
+                fetchData(); // Refresh data
+            }
+        } catch (error) {
+            console.error('Error adding product:', error);
+            message.error('Không thể thêm sản phẩm. Vui lòng thử lại.');
+        }
     };
 
-    const handleAddUser = () => {
-        userForm.validateFields().then(values => {
+    const handleAddUser = async () => {
+        try {
+            const values = await userForm.validateFields();
             const userData = {
-                userName: values.userName,
+                username: values.username,
                 phoneNumber: values.phoneNumber,
                 address: values.address,
-                roles: values.roles
+                email: values.email,
+                password: values.password
             };
-            fetch('/api/users/create', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(userData)
-            })
-                .then(res => res.json())
-                .then(data => {
-                    message.success("Thêm người dùng thành công");
-                    setUsers([...users, data]);
-                    setIsUserModalVisible(false);
-                    userForm.resetFields();
-                })
-                .catch(console.error);
-        });
+
+            const response = await axiosInstance.post(API_ENDPOINTS.USERS, userData);
+            if (response) {
+                message.success("Thêm người dùng thành công");
+                setUsers([...users, response]);
+                setIsUserModalVisible(false);
+                userForm.resetFields();
+                fetchData(); // Refresh data
+            }
+        } catch (error) {
+            console.error('Error adding user:', error);
+            message.error('Không thể thêm người dùng. Vui lòng thử lại.');
+        }
     };
 
-    const handleAddOrder = () => {
-        orderForm.validateFields().then(values => {
+    const handleAddOrder = async () => {
+        try {
+            const values = await orderForm.validateFields();
             const orderData = {
                 userId: values.userId,
-                amount: values.amount,
-                method: values.method,
-                address: {
-                    street: values.street,
-                    city: values.city,
-                    state: values.state
-                }
+                totalAmount: values.amount,
+                paymentMethod: values.method,
+                address: values.address,
+                phone: values.phone,
+                note: values.note
             };
-            fetch('/api/payments/create', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(orderData)
-            })
-                .then(res => res.json())
-                .then(data => {
-                    message.success("Thêm đơn hàng thành công");
-                    setOrders([...orders, data]);
-                    setIsOrderModalVisible(false);
-                    orderForm.resetFields();
-                })
-                .catch(console.error);
-        });
+
+            const response = await axiosInstance.post(API_ENDPOINTS.ORDERS, orderData);
+            if (response) {
+                message.success("Thêm đơn hàng thành công");
+                setOrders([...orders, response]);
+                setIsOrderModalVisible(false);
+                orderForm.resetFields();
+                fetchData(); // Refresh data
+            }
+        } catch (error) {
+            console.error('Error adding order:', error);
+            message.error('Không thể thêm đơn hàng. Vui lòng thử lại.');
+        }
     };
 
     const exportStatisticsToExcel = () => {
-        const totalRevenue = orders.reduce((sum, order) => sum + order.amount, 0);
+        const totalRevenue = orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+        const completedOrders = orders.filter(order => order.status === 'COMPLETED').length;
+        const pendingOrders = orders.filter(order => order.status === 'PENDING').length;
+        const processingOrders = orders.filter(order => order.status === 'PROCESSING').length;
+
         const data = [
             { "Chỉ tiêu": "Số lượng sản phẩm", "Giá trị": products.length },
             { "Chỉ tiêu": "Số lượng người dùng", "Giá trị": users.length },
             { "Chỉ tiêu": "Tổng đơn hàng", "Giá trị": orders.length },
-            { "Chỉ tiêu": "Tổng doanh thu", "Giá trị": totalRevenue }
+            { "Chỉ tiêu": "- Đơn hàng hoàn thành", "Giá trị": completedOrders },
+            { "Chỉ tiêu": "- Đơn hàng đang xử lý", "Giá trị": processingOrders },
+            { "Chỉ tiêu": "- Đơn hàng chờ xử lý", "Giá trị": pendingOrders },
+            { "Chỉ tiêu": "Tổng doanh thu", "Giá trị": totalRevenue.toLocaleString('vi-VN') + ' đ' }
         ];
 
         const worksheet = XLSX.utils.json_to_sheet(data);
@@ -158,42 +168,124 @@ const AdminPage = () => {
     };
 
     const productColumns = [
+        { 
+            title: 'Hình ảnh', 
+            dataIndex: 'image', 
+            key: 'image',
+            render: (image) => (
+                <Image 
+                    src={getImageUrl(image)}
+                    alt="product"
+                    width={50}
+                    height={50}
+                    style={{ objectFit: 'cover' }}
+                    fallback="data:image/png;base64,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"
+                />
+            )
+        },
         { title: 'Tên', dataIndex: 'name', key: 'name' },
-        { title: 'Giá', dataIndex: 'price', key: 'price' },
+        { 
+            title: 'Giá', 
+            dataIndex: 'price', 
+            key: 'price',
+            render: (price) => `${price?.toLocaleString('vi-VN')} đ`
+        },
+        { 
+            title: 'Giảm giá', 
+            dataIndex: 'discount', 
+            key: 'discount',
+            render: (discount) => `${discount}%`
+        },
+        { title: 'Đã bán', dataIndex: 'sold', key: 'sold' },
         { title: 'Đánh giá', dataIndex: 'rating', key: 'rating' },
         {
-            title: 'Danh mục', dataIndex: 'categoryId', key: 'categoryId',
+            title: 'Danh mục',
+            dataIndex: 'categoryId',
+            key: 'categoryId',
             render: (categoryId) => getCategoryName(categoryId)
         },
     ];
 
     const userColumns = [
-        { title: 'Tên người dùng', dataIndex: 'userName', key: 'userName' },
+        { title: 'Tên người dùng', dataIndex: 'username', key: 'username' },
+        { title: 'Email', dataIndex: 'email', key: 'email' },
         { title: 'Số điện thoại', dataIndex: 'phoneNumber', key: 'phoneNumber' },
-        { title: 'Vai trò', dataIndex: 'roles', key: 'roles' },
         { title: 'Địa chỉ', dataIndex: 'address', key: 'address' },
     ];
 
     const orderColumns = [
-        { title: 'Mã đơn hàng', dataIndex: 'id', key: 'id' },
-        {
-            title: 'Người mua', dataIndex: 'user', key: 'user',
-            render: (user) => `${user?.userName} (${user?.email})`
+        { 
+            title: 'Mã đơn hàng', 
+            dataIndex: 'id', 
+            key: 'id',
+            render: (id) => `#${id}`
         },
-        { title: 'Tổng tiền', dataIndex: 'amount', key: 'amount' },
-        { title: 'Phương thức', dataIndex: 'method', key: 'method' },
-        {
-            title: 'Địa chỉ', dataIndex: 'address', key: 'address',
-            render: (address) => address ? `${address.street}, ${address.city}, ${address.state}` : ''
+        { title: 'Người mua', dataIndex: 'user', key: 'user', render: (user) => user?.username },
+        { 
+            title: 'Tổng tiền', 
+            dataIndex: 'totalAmount', 
+            key: 'totalAmount',
+            render: (amount) => `${amount?.toLocaleString('vi-VN')} đ`
+        },
+        { 
+            title: 'Phương thức', 
+            dataIndex: 'paymentMethod', 
+            key: 'paymentMethod',
+            render: (method) => {
+                switch (method) {
+                    case 'COD': return 'Thanh toán khi nhận hàng';
+                    case 'MOMO': return 'Ví MoMo';
+                    case 'VN_PAY': return 'VNPay';
+                    case 'ZALO_PAY': return 'ZaloPay';
+                    default: return method;
+                }
+            }
+        },
+        { title: 'Địa chỉ', dataIndex: 'address', key: 'address' },
+        { title: 'Số điện thoại', dataIndex: 'phone', key: 'phone' },
+        { 
+            title: 'Trạng thái', 
+            dataIndex: 'status', 
+            key: 'status',
+            render: (status) => {
+                switch (status) {
+                    case 'PENDING': return 'Chờ xử lý';
+                    case 'PROCESSING': return 'Đang xử lý';
+                    case 'SHIPPED': return 'Đang giao hàng';
+                    case 'DELIVERED': return 'Đã giao hàng';
+                    case 'CANCELLED': return 'Đã hủy';
+                    default: return status;
+                }
+            }
         }
     ];
 
     const renderContent = () => {
+        if (loading) {
+            return (
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+                    <Spin size="large" />
+                </div>
+            );
+        }
+
         if (selectedMenuItem === 'products') {
             return (
                 <>
-                    <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsProductModalVisible(true)}>Thêm sản phẩm</Button>
-                    <Table dataSource={products} columns={productColumns} rowKey="id" pagination={{ pageSize: 5 }} />
+                    <Button 
+                        type="primary" 
+                        icon={<PlusOutlined />} 
+                        onClick={() => setIsProductModalVisible(true)}
+                        style={{ marginBottom: 16 }}
+                    >
+                        Thêm sản phẩm
+                    </Button>
+                    <Table 
+                        dataSource={products} 
+                        columns={productColumns} 
+                        rowKey="id" 
+                        pagination={{ pageSize: 10 }}
+                    />
 
                     <Modal
                         title="Thêm sản phẩm"
@@ -248,7 +340,7 @@ const AdminPage = () => {
                         onCancel={() => setIsUserModalVisible(false)}
                     >
                         <Form form={userForm} layout="vertical">
-                            <Form.Item name="userName" label="Tên người dùng" rules={[{ required: true }]}>
+                            <Form.Item name="username" label="Tên người dùng" rules={[{ required: true }]}>
                                 <Input />
                             </Form.Item>
                             <Form.Item name="phoneNumber" label="Số điện thoại" rules={[{ required: true }]}>
@@ -257,11 +349,11 @@ const AdminPage = () => {
                             <Form.Item name="address" label="Địa chỉ">
                                 <Input />
                             </Form.Item>
-                            <Form.Item name="roles" label="Vai trò" initialValue="USER">
-                                <Select>
-                                    <Option value="USER">USER</Option>
-                                    <Option value="ADMIN">ADMIN</Option>
-                                </Select>
+                            <Form.Item name="email" label="Email" rules={[{ required: true }]}>
+                                <Input />
+                            </Form.Item>
+                            <Form.Item name="password" label="Mật khẩu" rules={[{ required: true }]}>
+                                <Input type="password" />
                             </Form.Item>
                         </Form>
                     </Modal>
@@ -285,7 +377,7 @@ const AdminPage = () => {
                             <Form.Item name="userId" label="Người dùng" rules={[{ required: true }]}>
                                 <Select placeholder="Chọn người dùng">
                                     {users.map(user => (
-                                        <Option key={user.id} value={user.id}>{user.userName}</Option>
+                                        <Option key={user.id} value={user.id}>{user.username}</Option>
                                     ))}
                                 </Select>
                             </Form.Item>
@@ -307,6 +399,12 @@ const AdminPage = () => {
                             <Form.Item name="state" label="Quốc gia" rules={[{ required: true }]}>
                                 <Input />
                             </Form.Item>
+                            <Form.Item name="phone" label="Số điện thoại" rules={[{ required: true }]}>
+                                <Input />
+                            </Form.Item>
+                            <Form.Item name="note" label="Ghi chú">
+                                <Input />
+                            </Form.Item>
                         </Form>
                     </Modal>
                 </>
@@ -314,16 +412,43 @@ const AdminPage = () => {
         }
 
         if (selectedMenuItem === 'statistics') {
-            const totalRevenue = orders.reduce((sum, order) => sum + order.amount, 0);
+            const totalRevenue = orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+            const completedOrders = orders.filter(order => order.status === 'COMPLETED').length;
+            const pendingOrders = orders.filter(order => order.status === 'PENDING').length;
+            const processingOrders = orders.filter(order => order.status === 'PROCESSING').length;
+            
             return (
                 <>
                     <Row gutter={16} style={{ marginBottom: 20 }}>
-                        <Col span={6}><Card title="Sản phẩm" bordered><h2>{products.length}</h2></Card></Col>
-                        <Col span={6}><Card title="Người dùng" bordered><h2>{users.length}</h2></Card></Col>
-                        <Col span={6}><Card title="Đơn hàng" bordered><h2>{orders.length}</h2></Card></Col>
-                        <Col span={6}><Card title="Doanh thu" bordered><h2>{totalRevenue.toLocaleString()} VND</h2></Card></Col>
+                        <Col span={6}>
+                            <Card title="Sản phẩm" bordered>
+                                <h2>{products.length}</h2>
+                            </Card>
+                        </Col>
+                        <Col span={6}>
+                            <Card title="Người dùng" bordered>
+                                <h2>{users.length}</h2>
+                            </Card>
+                        </Col>
+                        <Col span={6}>
+                            <Card title="Đơn hàng" bordered>
+                                <h2>{orders.length}</h2>
+                                <div style={{ fontSize: '14px', color: '#666' }}>
+                                    <div>Hoàn thành: {completedOrders}</div>
+                                    <div>Đang xử lý: {processingOrders}</div>
+                                    <div>Chờ xử lý: {pendingOrders}</div>
+                                </div>
+                            </Card>
+                        </Col>
+                        <Col span={6}>
+                            <Card title="Doanh thu" bordered>
+                                <h2>{totalRevenue.toLocaleString('vi-VN')} đ</h2>
+                            </Card>
+                        </Col>
                     </Row>
-                    <Button type="primary" icon={<DownloadOutlined />} onClick={exportStatisticsToExcel}>Xuất file Excel</Button>
+                    <Button type="primary" icon={<DownloadOutlined />} onClick={exportStatisticsToExcel}>
+                        Xuất file Excel
+                    </Button>
                 </>
             );
         }

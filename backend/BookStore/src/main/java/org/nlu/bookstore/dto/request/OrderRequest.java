@@ -2,6 +2,7 @@ package org.nlu.bookstore.dto.request;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.nlu.bookstore.enums.PaymentMethod;
 
 @Data
 @AllArgsConstructor
@@ -12,4 +13,5 @@ public class OrderRequest {
     String address;
     String note;
     String phone;
+    PaymentMethod paymentMethod;
 }

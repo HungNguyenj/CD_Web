@@ -1,20 +1,29 @@
-import { Link, useParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import React, { useEffect, useState } from 'react';
 import { WrapperContent, WrapperLableText, WrapperTextValue } from './style';
+import axiosInstance from '../../api/axiosConfig';
+import { API_ENDPOINTS } from '../../constants/apiEndpoints';
+import { message } from 'antd';
 
 const NavBarComponent = () => {
     const [categories, setCategories] = useState([]);
 
     useEffect(() => {
-        fetch("/api/categories")
-            .then((response) => response.json())
-            .then((data) => setCategories(data))
-            .catch((error) => console.error("Có lỗi xảy ra:", error));
+        const fetchCategories = async () => {
+            try {
+                const data = await axiosInstance.get(API_ENDPOINTS.CATEGORIES);
+                setCategories(data);
+            } catch (error) {
+                console.error("Error fetching categories:", error);
+                message.error("Không thể tải danh mục sản phẩm");
+            }
+        };
+        fetchCategories();
     }, []);
 
     return (
         <div>
-            <WrapperLableText>Danh mục sản phẩm</WrapperLableText>
+            <WrapperLableText>Danh mục sản phẩm</WrapperLableText>
             <WrapperContent>
                 {/* Thêm mục tất cả sản phẩm */}
                 <Link style={{ textDecoration: 'none', color: 'black' }} to={`/category/all`}>

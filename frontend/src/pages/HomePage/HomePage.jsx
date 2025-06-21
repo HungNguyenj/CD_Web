@@ -5,7 +5,8 @@ import {
     WrapperButtonMore,
     WrapperProducts,
     WrapperFeatured,
-    FeaturedTitle
+    FeaturedTitle,
+    WrapperTypeProduct
 } from "./style";
 import slide1 from '../../assets/images/slide1.jpg';
 import slide2 from '../../assets/images/slide2.jpg';
@@ -15,6 +16,13 @@ import CardComponent from "../../components/CardComponent/CardComponent";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
+import TypeProduct from '../../components/TypeProduct/TypeProduct';
+import { Row, Col, Spin, Typography } from 'antd';
+import axiosInstance from '../../api/axiosConfig';
+import { API_ENDPOINTS } from '../../constants/apiEndpoints';
+
+const { Title } = Typography;
+
 const calculateDiscountedPrice = (product) => {
     if (!product.discount || product.discount === 0) {
         return product.price;
@@ -25,10 +33,14 @@ const calculateDiscountedPrice = (product) => {
 
 const HomePage = () => {
     const [products, setProducts] = useState([]);
+    const [categories, setCategories] = useState([]);
+    const [loading, setLoading] = useState(false);
     const [visibleProducts, setVisibleProducts] = useState(12);
     const [timeLeft, setTimeLeft] = useState(0);
 
     useEffect(() => {
+        fetchCategories();
+        fetchProducts();
         // Flash Sale thời gian 2 giờ
         const endTime = Date.now() + 2 * 60 * 60 * 1000;
         const timer = setInterval(() => {
@@ -38,12 +50,32 @@ const HomePage = () => {
         return () => clearInterval(timer);
     }, []);
 
-    useEffect(() => {
-        fetch("/home")
-            .then((response) => response.json())
-            .then((data) => setProducts(data.products))
-            .catch((error) => console.error("Lỗi:", error));
-    }, []);
+    const fetchCategories = async () => {
+        try {
+            const response = await axiosInstance.get(API_ENDPOINTS.CATEGORIES);
+            setCategories(response);
+        } catch (error) {
+            console.error("Error fetching categories:", error);
+        }
+    };
+
+    const fetchProducts = async () => {
+        setLoading(true);
+        try {
+            const response = await axiosInstance.get(API_ENDPOINTS.PRODUCTS);
+            setProducts(response);
+        } catch (error) {
+            console.error("Error fetching products:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Group products by category
+    const productsByCategory = categories.reduce((acc, category) => {
+        acc[category.name] = products.filter(product => product.category === category.name);
+        return acc;
+    }, {});
 
     const loadMoreProducts = () => {
         setVisibleProducts(prev => prev + 12);
@@ -73,6 +105,38 @@ const HomePage = () => {
     return (
         <>
             <WrapperPage>
+                <SlideComponent />
+                
+                <div style={{ marginTop: '20px' }}>
+                    <WrapperTypeProduct>
+                        {categories.map((category) => (
+                            <TypeProduct name={category.name} key={category.id} />
+                        ))}
+                    </WrapperTypeProduct>
+                </div>
+
+                <Spin spinning={loading}>
+                    {categories.map((category) => {
+                        const categoryProducts = productsByCategory[category.name];
+                        if (!categoryProducts || categoryProducts.length === 0) return null;
+
+                        return (
+                            <div key={category.id} style={{ marginTop: '40px' }}>
+                                <Title level={3} style={{ marginBottom: '20px' }}>
+                                    {category.name}
+                                </Title>
+                                <Row gutter={[16, 16]}>
+                                    {categoryProducts.slice(0, 8).map((product) => (
+                                        <Col key={product.id} xs={24} sm={12} md={8} lg={6}>
+                                            <CardComponent product={product} />
+                                        </Col>
+                                    ))}
+                                </Row>
+                            </div>
+                        );
+                    })}
+                </Spin>
+
                 {/* FLASH SALE */}
                 <div style={{ background: '#ff4d4f', padding: '16px', borderRadius: '8px', marginTop: 20 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#fff' }}>

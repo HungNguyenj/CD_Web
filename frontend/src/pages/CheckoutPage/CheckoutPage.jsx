@@ -1,175 +1,328 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import {
+  Form,
+  Input,
+  Button,
+  Card,
+  Row,
+  Col,
+  Divider,
+  Radio,
+  message,
+  Steps,
+  Image,
+  Space
+} from 'antd';
+import { getImageUrl } from '../../utils/imageUtils';
+import axiosInstance from '../../api/axiosConfig';
+import { API_ENDPOINTS } from '../../constants/apiEndpoints';
 
-const Checkout = () => {
-    const [cartItems, setCartItems] = useState([]);
-    const [totalAmount, setTotalAmount] = useState(0);
-    const [paymentMethod, setPaymentMethod] = useState('COD');
-    const [address, setAddress] = useState({ street: '', city: '', state: '' });
-    const [error, setError] = useState(null);
-    const [orderPlaced, setOrderPlaced] = useState(false);
-    const [userId, setUserId] = useState(null);
+const CheckoutPage = () => {
+  const location = useLocation();
     const navigate = useNavigate();
-    const location = useLocation();
+  const [form] = Form.useForm();
+  const [loading, setLoading] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
+
+  // Lấy thông tin giỏ hàng từ state
+  const cartData = location.state;
 
     useEffect(() => {
+    // Kiểm tra đăng nhập
         const token = localStorage.getItem('token');
         if (!token) {
-            setError('Vui lòng đăng nhập.');
-            return;
+      message.error('Vui lòng đăng nhập để đặt hàng');
+      navigate('/login', { 
+        state: { 
+          from: location.pathname,
+          cartData: cartData 
         }
-        const decodedToken = JSON.parse(atob(token.split('.')[1]));
-        setUserId(decodedToken.userId);
+      });
+      return;
+    }
 
-        if (location.state && location.state.productId) {
-            // Trường hợp mua ngay từ ProductDetail
-            const { productId, quantity } = location.state;
+    // Kiểm tra dữ liệu giỏ hàng
+    if (!cartData || !cartData.cartItems || cartData.cartItems.length === 0) {
+      message.error('Không có thông tin giỏ hàng');
+      navigate('/cart');
+      return;
+    }
 
-            axios.get(`/api/products/${productId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            })
-                .then(response => {
-                    const updatedProduct = response.data;
-                    const item = { id: updatedProduct.id, product: updatedProduct, quantity };
-                    setCartItems([item]);
+    // Load thông tin user
+    loadUserInfo();
+  }, []);
 
-                    const priceToUse = updatedProduct.discountPrice > 0
-                        ? updatedProduct.discountPrice
-                        : updatedProduct.price;
+  const loadUserInfo = async () => {
+    try {
+      const response = await axiosInstance.get(API_ENDPOINTS.USER_PROFILE);
+      if (response) {
+        form.setFieldsValue({
+          fullName: response.username,
+          phone: response.phoneNumber,
+          address: response.address,
+          email: response.email
+        });
+      }
+    } catch (error) {
+      console.error('Lỗi khi tải thông tin user:', error);
+      if (error.response?.status === 401) {
+        message.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+        navigate('/login', { 
+          state: { 
+            from: location.pathname,
+            cartData: cartData 
+          }
+        });
+      }
+    }
+  };
 
-                    setTotalAmount(priceToUse * quantity);
-                })
-                .catch(err => {
-                    console.error('Lỗi load sản phẩm:', err);
-                    setError('Không thể load sản phẩm.');
-                });
+  const onFinish = async (values) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        message.error('Vui lòng đăng nhập để đặt hàng');
+        navigate('/login', { 
+          state: { 
+            from: location.pathname,
+            cartData: cartData 
+          }
+        });
+        return;
+      }
 
-        } else {
-            // Trường hợp vào từ giỏ hàng
-            const fetchCartItems = async () => {
-                try {
-                    const response = await axios.get('/api/cart', {
-                        headers: { Authorization: `Bearer ${token}` }
-                    });
-                    setCartItems(response.data);
-                    const total = response.data.reduce((sum, item) => {
-                        const priceToUse = item.product.discountPrice > 0
-                            ? item.product.discountPrice
-                            : item.product.price;
-                        return sum + priceToUse * item.quantity;
-                    }, 0);
-                    setTotalAmount(total);
-                } catch (err) {
-                    console.error('Error fetching cart:', err);
-                    setError('Failed to load cart');
-                }
-            };
-            fetchCartItems();
-        }
-    }, [location.state]);
+      setLoading(true);
+      
+      // Tạo order request theo format backend yêu cầu
+      const orderRequest = {
+        address: values.address,
+        note: values.note || "",
+        phone: values.phone,
+        paymentMethod: values.paymentMethod || "COD"
+      };
 
-    const handlePayment = async () => {
-        try {
-            const orderItems = cartItems.map(item => ({
-                productId: item.product.id,
-                quantity: item.quantity,
-                userId: userId
-            }));
+      console.log('Sending order request:', orderRequest);
 
-            await axios.post('/api/payments/create', {
-                userId: userId,
-                amount: totalAmount,
-                method: paymentMethod,
-                address,
-                orderItems
-            }, {
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem('token')}`,
-                    'Content-Type': 'application/json'
-                }
-            });
+      // Gọi API tạo đơn hàng
+      const orderData = await axiosInstance.post(API_ENDPOINTS.ORDERS, orderRequest);
+      
+      console.log('Order response:', orderData);
 
-            setOrderPlaced(true);
-            setCartItems([]);
-            setTotalAmount(0);
-        } catch (err) {
-            console.error('Error creating payment:', err);
-            setError('Failed to create payment.');
-        }
-    };
+      // Kiểm tra response - orderData là đã được unwrap bởi axios interceptor
+      if (orderData) {
+        message.success('Đặt hàng thành công!');
+        
+        // Chuyển đến trang thành công với thông tin đơn hàng
+        navigate('/order-success', { 
+          state: { 
+            orderId: orderData?.id,
+            orderInfo: {
+              ...orderData,
+              address: values.address,
+              phone: values.phone,
+              note: values.note,
+              paymentMethod: values.paymentMethod
+            }
+          } 
+        });
+      }
+    } catch (error) {
+      console.error('Lỗi khi đặt hàng:', error);
+      
+      // Xử lý các loại lỗi
+      if (error.response?.status === 401) {
+        message.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+        navigate('/login', { 
+          state: { 
+            from: location.pathname,
+            cartData: cartData 
+          }
+        });
+      } else {
+        message.error(
+          error.response?.data?.message || 
+          error.message || 
+          'Không thể đặt hàng. Vui lòng thử lại sau.'
+        );
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const handleAddressChange = (e) => {
-        const { name, value } = e.target;
-        setAddress(prev => ({ ...prev, [name]: value }));
-    };
+  const steps = [
+    {
+      title: 'Thông tin giao hàng',
+      content: (
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={onFinish}
+          initialValues={{
+            paymentMethod: 'COD'
+          }}
+        >
+          <Row gutter={24}>
+            <Col span={16}>
+              <Card title="Thông tin giao hàng" bordered={false}>
+                <Form.Item
+                  name="fullName"
+                  label="Họ tên"
+                  rules={[{ required: true, message: 'Vui lòng nhập họ tên' }]}
+                >
+                  <Input placeholder="Nhập họ tên người nhận" />
+                </Form.Item>
 
-    const handleGoBack = () => {
-        navigate('/');
-    };
+                <Form.Item
+                  name="phone"
+                  label="Số điện thoại"
+                  rules={[
+                    { required: true, message: 'Vui lòng nhập số điện thoại' },
+                    { pattern: /^[0-9]{10}$/, message: 'Số điện thoại không hợp lệ' }
+                  ]}
+                >
+                  <Input placeholder="Nhập số điện thoại" />
+                </Form.Item>
 
-    return (
-        <div style={{ padding: '40px 20px', background: '#f7f7f7', minHeight: '100vh' }}>
-            <div style={{ maxWidth: '900px', margin: '0 auto', padding: '24px', background: '#fff', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-                <h1 style={{ fontSize: '28px', fontWeight: '700', marginBottom: '20px', textAlign: 'center', color: '#333' }}>Xác nhận đơn hàng</h1>
-                {error && <p style={{ color: 'red', textAlign: 'center' }}>{error}</p>}
+                <Form.Item
+                  name="email"
+                  label="Email"
+                  rules={[
+                    { type: 'email', message: 'Email không hợp lệ' }
+                  ]}
+                >
+                  <Input placeholder="Nhập email" />
+                </Form.Item>
 
-                {!orderPlaced ? (
-                    <>
-                        <div style={{ marginBottom: '20px' }}>
-                            <h2 style={{ fontSize: '20px', marginBottom: '15px', color: '#555' }}>Thông tin sản phẩm</h2>
-                            {cartItems.map(item => (
-                                <div key={item.id} style={{ display: 'flex', alignItems: 'center', marginBottom: '15px', border: '1px solid #ddd', borderRadius: '8px', padding: '10px' }}>
-                                    <img src={`/assets/images/${item.product.image}`} alt={item.product.name} style={{ width: '100px', height: '100px', borderRadius: '8px', marginRight: '20px' }} />
-                                    <div>
-                                        <h3 style={{ margin: 0, fontSize: '18px' }}>{item.product.name}</h3>
-                                        {item.product.discountPrice > 0 ? (
-                                            <p style={{ margin: '5px 0' }}>
-                                                Giá: <span style={{ textDecoration: 'line-through', color: '#999' }}>{item.product.price} đ</span>
-                                                <span style={{ color: 'red', fontWeight: 'bold', marginLeft: '10px' }}>{item.product.discountPrice} đ</span>
-                                            </p>
-                                        ) : (
-                                            <p style={{ margin: '5px 0' }}>Giá: {item.product.price} đ</p>
-                                        )}
-                                        <p style={{ margin: '5px 0' }}>Số lượng: {item.quantity}</p>
+                <Form.Item
+                  name="address"
+                  label="Địa chỉ"
+                  rules={[{ required: true, message: 'Vui lòng nhập địa chỉ' }]}
+                >
+                  <Input.TextArea
+                    placeholder="Nhập địa chỉ giao hàng"
+                    rows={3}
+                  />
+                </Form.Item>
+
+                <Form.Item
+                  name="note"
+                  label="Ghi chú"
+                >
+                  <Input.TextArea
+                    placeholder="Ghi chú về đơn hàng, ví dụ: thời gian hay chỉ dẫn địa điểm giao hàng chi tiết hơn"
+                    rows={3}
+                  />
+                </Form.Item>
+              </Card>
+
+              <Card title="Phương thức thanh toán" bordered={false} style={{ marginTop: '20px' }}>
+                <Form.Item name="paymentMethod">
+                  <Radio.Group>
+                    <Space direction="vertical">
+                      <Radio value="COD">Thanh toán khi nhận hàng (COD)</Radio>
+                      <Radio value="MOMO">Ví MoMo</Radio>
+                      <Radio value="VN_PAY">VNPay</Radio>
+                      <Radio value="ZALO_PAY">ZaloPay</Radio>
+                    </Space>
+                  </Radio.Group>
+                </Form.Item>
+              </Card>
+            </Col>
+
+            <Col span={8}>
+              <Card title="Thông tin đơn hàng" bordered={false}>
+                <div style={{ maxHeight: '400px', overflowY: 'auto', marginBottom: '20px' }}>
+                  {cartData?.cartItems?.map((item) => (
+                    <div key={item.id} style={{ marginBottom: '15px' }}>
+                      <Row gutter={8} align="middle">
+                        <Col span={8}>
+                          <Image
+                            src={getImageUrl(item.product.image)}
+                            alt={item.product.name}
+                            width="100%"
+                            style={{ objectFit: 'cover', borderRadius: '4px' }}
+                          />
+                        </Col>
+                        <Col span={16}>
+                          <div style={{ fontWeight: '500' }}>{item.product.name}</div>
+                          <div style={{ color: '#666', fontSize: '12px' }}>
+                            Số lượng: {item.quantity}
+                          </div>
+                          <div style={{ color: '#ff4d4f', marginTop: '4px' }}>
+                            {Math.round(item.product.price * (1 - (item.product.discount || 0) / 100) * item.quantity).toLocaleString('vi-VN')} đ
                                     </div>
+                        </Col>
+                      </Row>
                                 </div>
                             ))}
-                            <h2 style={{ fontSize: '20px', textAlign: 'right' }}>Tổng tiền: {totalAmount.toLocaleString()} đ</h2>
                         </div>
 
-                        <div style={{ marginBottom: '20px' }}>
-                            <h2 style={{ fontSize: '20px', marginBottom: '15px', color: '#555' }}>Địa chỉ giao hàng</h2>
-                            <input type="text" name="street" value={address.street} onChange={handleAddressChange} placeholder="Đường" style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '8px', border: '1px solid #ddd' }} />
-                            <input type="text" name="city" value={address.city} onChange={handleAddressChange} placeholder="Thành phố" style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '8px', border: '1px solid #ddd' }} />
-                            <input type="text" name="state" value={address.state} onChange={handleAddressChange} placeholder="Quận/Huyện" style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '8px', border: '1px solid #ddd' }} />
+                <Divider style={{ margin: '12px 0' }} />
+
+                <div style={{ marginBottom: '12px' }}>
+                  <Row justify="space-between">
+                    <Col>Tạm tính:</Col>
+                    <Col style={{ fontWeight: '500' }}>
+                      {cartData?.totalAmount?.toLocaleString('vi-VN')} đ
+                    </Col>
+                  </Row>
+                  <Row justify="space-between" style={{ marginTop: '8px' }}>
+                    <Col>Phí vận chuyển:</Col>
+                    <Col style={{ fontWeight: '500' }}>0 đ</Col>
+                  </Row>
                         </div>
 
-                        <div style={{ marginBottom: '20px' }}>
-                            <h2 style={{ fontSize: '20px', marginBottom: '15px', color: '#555' }}>Phương thức thanh toán</h2>
-                            <select value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }}>
-                                <option value="COD">Thanh toán khi nhận hàng (COD)</option>
-                            </select>
-                        </div>
+                <Divider style={{ margin: '12px 0' }} />
 
-                        <div style={{ display: 'flex', gap: '15px' }}>
-                            <button onClick={handlePayment} style={{ flex: 1, padding: '12px', backgroundColor: '#28a745', color: '#fff', fontSize: '18px', fontWeight: 'bold', borderRadius: '8px', border: 'none', cursor: 'pointer' }}>
-                                Đặt hàng ngay
-                            </button>
-                            <button onClick={handleGoBack} style={{ flex: 1, padding: '12px', backgroundColor: '#007bff', color: '#fff', fontSize: '18px', fontWeight: 'bold', borderRadius: '8px', border: 'none', cursor: 'pointer' }}>
-                                Tiếp tục mua hàng
-                            </button>
-                        </div>
-                    </>
-                ) : (
-                    <div style={{ textAlign: 'center', padding: '40px 20px', backgroundColor: '#e6ffe6', borderRadius: '8px' }}>
-                        <h2 style={{ fontSize: '24px', color: '#28a745' }}>Đặt hàng thành công!</h2>
-                        <p style={{ fontSize: '16px' }}>Cảm ơn bạn đã mua sắm tại cửa hàng chúng tôi.</p>
-                    </div>
-                )}
-            </div>
+                <Row justify="space-between" style={{ marginBottom: '20px' }}>
+                  <Col>
+                    <span style={{ fontSize: '16px', fontWeight: '500' }}>Tổng cộng:</span>
+                  </Col>
+                  <Col>
+                    <span style={{ color: '#ff4d4f', fontSize: '20px', fontWeight: '700' }}>
+                      {cartData?.totalAmount?.toLocaleString('vi-VN')} đ
+                    </span>
+                  </Col>
+                </Row>
+
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  loading={loading}
+                  block
+                  size="large"
+                  style={{ height: '48px', fontSize: '16px' }}
+                >
+                  Đặt hàng ({cartData?.cartItems?.length || 0} sản phẩm)
+                </Button>
+              </Card>
+            </Col>
+          </Row>
+        </Form>
+      ),
+    }
+  ];
+
+  return (
+    <div style={styles.container}>
+      <Steps
+        current={currentStep}
+        items={steps.map(item => ({ title: item.title }))}
+        style={{ marginBottom: '24px' }}
+      />
+      {steps[currentStep].content}
         </div>
     );
 };
 
-export default Checkout;
+const styles = {
+  container: {
+    padding: '24px',
+    background: '#f5f5f5',
+    minHeight: '100vh'
+  }
+};
+
+export default CheckoutPage;

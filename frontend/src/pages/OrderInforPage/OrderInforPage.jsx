@@ -1,76 +1,148 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Space } from 'antd';
+import { Table, Tag, Space, Typography, Card, message } from 'antd';
+import axiosInstance from '../../api/axiosConfig';
+import { API_ENDPOINTS } from '../../constants/apiEndpoints';
 
-const OrderPage = () => {
+const { Title } = Typography;
+
+const OrderInfoPage = () => {
     const [orders, setOrders] = useState([]);
-
-
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         fetchOrders();
     }, []);
 
-    const fetchOrders = () => {
-        const token = localStorage.getItem('token');
-        fetch('/api/payments/user', {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-            },
-        })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Orders data:', data); // Log data received from API
-                setOrders(data);
-            })
-            .catch(error => {
-                console.error('Error fetching orders:', error);
-            });
+    const fetchOrders = async () => {
+        try {
+            setLoading(true);
+            const response = await axiosInstance.get(API_ENDPOINTS.ORDERS);
+            setOrders(response || []);
+        } catch (error) {
+            message.error('Không thể tải danh sách đơn hàng');
+            console.error('Error fetching orders:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const getStatusColor = (status) => {
+        switch (status) {
+            case 'PENDING':
+                return 'gold';
+            case 'PROCESSING':
+                return 'blue';
+            case 'SHIPPED':
+                return 'cyan';
+            case 'DELIVERED':
+                return 'green';
+            case 'CANCELLED':
+                return 'red';
+            default:
+                return 'default';
+        }
+    };
+
+    const getStatusText = (status) => {
+        switch (status) {
+            case 'PENDING':
+                return 'Chờ xử lý';
+            case 'PROCESSING':
+                return 'Đang xử lý';
+            case 'SHIPPED':
+                return 'Đang giao hàng';
+            case 'DELIVERED':
+                return 'Đã giao hàng';
+            case 'CANCELLED':
+                return 'Đã hủy';
+            default:
+                return status;
+        }
+    };
+
+    const getPaymentMethodText = (method) => {
+        switch (method) {
+            case 'COD':
+                return 'Thanh toán khi nhận hàng';
+            case 'MOMO':
+                return 'Ví MoMo';
+            case 'VN_PAY':
+                return 'VNPay';
+            case 'ZALO_PAY':
+                return 'ZaloPay';
+            default:
+                return method;
+        }
     };
 
     const columns = [
         {
-            title: 'Order ID',
+            title: 'Mã đơn hàng',
             dataIndex: 'id',
             key: 'id',
+            render: (id) => `#${id}`,
         },
         {
-            title: 'User',
-            dataIndex: 'user',
-            key: 'user',
-            render: (user) => `${user.userName} (${user.email})`,
+            title: 'Ngày đặt',
+            dataIndex: 'createdAt',
+            key: 'createdAt',
+            render: (date) => new Date(date).toLocaleDateString('vi-VN'),
         },
         {
-            title: 'Amount',
-            dataIndex: 'amount',
-            key: 'amount',
+            title: 'Tổng tiền',
+            dataIndex: 'totalAmount',
+            key: 'totalAmount',
+            render: (amount) => `${amount?.toLocaleString('vi-VN')} đ`,
         },
         {
-            title: 'Method',
-            dataIndex: 'method',
-            key: 'method',
+            title: 'Phương thức thanh toán',
+            dataIndex: 'paymentMethod',
+            key: 'paymentMethod',
+            render: (method) => getPaymentMethodText(method),
         },
         {
-            title: 'Address',
+            title: 'Trạng thái',
+            dataIndex: 'status',
+            key: 'status',
+            render: (status) => (
+                <Tag color={getStatusColor(status)}>
+                    {getStatusText(status)}
+                </Tag>
+            ),
+        },
+        {
+            title: 'Địa chỉ',
             dataIndex: 'address',
             key: 'address',
-            render: (text, record) => {
-                const address = record.address;
-                return address ? `${address.street}, ${address.city}, ${address.state}` : '';
-            }
+            ellipsis: true,
         },
+        {
+            title: 'Số điện thoại',
+            dataIndex: 'phone',
+            key: 'phone',
+        }
     ];
 
     return (
-        <div style={{ maxWidth: '800px', margin: 'auto', padding: '20px' }}>
-            <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>My Orders</h2>
-            <Table columns={columns} dataSource={orders} rowKey="id" />
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px' }}>
+            <Card>
+                <Title level={2} style={{ textAlign: 'center', marginBottom: 24 }}>
+                    Đơn hàng của tôi
+                </Title>
+                <Table 
+                    columns={columns} 
+                    dataSource={orders} 
+                    rowKey="id"
+                    loading={loading}
+                    pagination={{
+                        pageSize: 10,
+                        position: ['bottomCenter'],
+                        showSizeChanger: false
+                    }}
+                />
+            </Card>
         </div>
     );
 };
 
-export default OrderPage;
+export default OrderInfoPage;
