@@ -1,19 +1,29 @@
-import { Button } from 'antd'
-import React from 'react'
+import React from 'react';
+import { Button } from 'antd'; // ✅ phải có
 
-const ButtonComponent = ({ size, styleButton, styleTextButton, textButton, disabled, ...rests }) => {
-  return (
-    <Button
-      style={{
+const ButtonComponent = ({
+                             size,
+                             styleButton = {},
+                             styleTextButton = {},
+                             textButton,
+                             disabled,
+                             ...rests
+                         }) => {
+    const buttonStyle = {
         ...styleButton,
-        background: disabled ? '#ccc' : styleButton.background
-      }}
-      size={size}
-      {...rests}
-    >
-      <span style={styleTextButton}>{textButton}</span>
-    </Button>
-  )
-}
+        background: disabled ? '#ccc' : (styleButton?.background || '#9255FD'),
+    };
 
-export default ButtonComponent
+    return (
+        <Button
+            style={buttonStyle}
+            size={size}
+            disabled={disabled}
+            {...rests}
+        >
+            <span style={styleTextButton}>{textButton}</span>
+        </Button>
+    );
+};
+
+export default ButtonComponent;

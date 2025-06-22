@@ -1,5 +1,8 @@
 package org.nlu.bookstore.configuration;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -8,6 +11,7 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
@@ -16,8 +20,16 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
+import org.springframework.security.web.firewall.DefaultHttpFirewall;
+import org.springframework.security.web.firewall.HttpFirewall;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import javax.crypto.spec.SecretKeySpec;
+import java.io.IOException;
+import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
@@ -25,10 +37,16 @@ import javax.crypto.spec.SecretKeySpec;
 public class SecurityConfig {
 
     private final String[] PUBLIC_POST_ENDPOINTS = {
-        "/auth/login", "/auth/introspect", "/users"
+        "/auth/login", "/auth/forgot-password", "/auth/verify-otp", "/auth/reset-password", "/auth/introspect",
+        "/users",
     };
     private final String[] PUBLIC_GET_ENDPOINTS = {
-        "/products", "/products/{id}",
+        "/products", "/products/*",
+        "/products/search",
+        "/products/suggestions",
+        "/categories",
+        "/categories/*",
+        "/home"
     };
 
     @Value("${jwt.signerKey}")
@@ -38,12 +56,14 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception{
 
         //phan quyen
-        httpSecurity.authorizeHttpRequests(request ->
-                request.requestMatchers(HttpMethod.POST, PUBLIC_POST_ENDPOINTS).permitAll()
-                        .requestMatchers(HttpMethod.GET, PUBLIC_GET_ENDPOINTS).permitAll()
+        httpSecurity.cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                    .csrf(csrf -> csrf.disable())
+                    .authorizeHttpRequests(request ->
+                            request.requestMatchers(HttpMethod.POST, PUBLIC_POST_ENDPOINTS).permitAll()
+                                    .requestMatchers(HttpMethod.GET, PUBLIC_GET_ENDPOINTS).permitAll()
 //                        .requestMatchers(HttpMethod.GET, "/users").hasRole("ADMIN")
-                        .anyRequest().authenticated()
-        );
+                                    .anyRequest().authenticated()
+                    );
 
         //token
         httpSecurity.oauth2ResourceServer(oauth2 ->
@@ -60,18 +80,19 @@ public class SecurityConfig {
         return httpSecurity.build();
     }
 
-    // Code ket noi voi front end
-//    @Bean
-//    public CorsConfigurationSource corsConfigurationSource() {
-//        CorsConfiguration configuration = new CorsConfiguration();
-//        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173"));// frontend URL
-//        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-//        configuration.setAllowedHeaders(Arrays.asList("*"));
-//        configuration.setAllowCredentials(true);
-//        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-//        source.registerCorsConfiguration("/**", configuration);
-//        return source;
-//    }
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
 
     @Bean
     JwtDecoder jwtDecoder() {
@@ -97,4 +118,25 @@ public class SecurityConfig {
     PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(10);
     }
+
+//    @Bean
+//    public SimpleUrlAuthenticationSuccessHandler authenticationSuccessHandler() {
+//        return new SimpleUrlAuthenticationSuccessHandler() {
+//            @Override
+//            protected void handle(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+//                String targetUrl;
+//                if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+//                    targetUrl = "/admin";
+//                } else {
+//                    targetUrl = "/";
+//                }
+//            }
+//        };
+//    }
+//    @Bean
+//    public HttpFirewall allowUrlEncodedSlashHttpFirewall() {
+//        DefaultHttpFirewall firewall = new DefaultHttpFirewall();
+//        firewall.setAllowUrlEncodedSlash(true); // Cho phép `//` trong URL
+//        return firewall;
+//    }
 }

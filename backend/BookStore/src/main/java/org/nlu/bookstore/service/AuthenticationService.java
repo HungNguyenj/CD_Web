@@ -12,12 +12,20 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
 import org.nlu.bookstore.dto.request.AuthenticationRequest;
+import org.nlu.bookstore.dto.request.ForgotPasswordRequest;
 import org.nlu.bookstore.dto.request.IntrospectRequest;
+import org.nlu.bookstore.dto.request.ResetPasswordRequest;
 import org.nlu.bookstore.dto.response.AuthenticationResponse;
+import org.nlu.bookstore.dto.response.ForgotPasswordResponse;
 import org.nlu.bookstore.dto.response.IntrospectResponse;
+import org.nlu.bookstore.dto.response.UserResponse;
+import org.nlu.bookstore.entity.OtpToken;
+import org.nlu.bookstore.entity.Role;
 import org.nlu.bookstore.entity.User;
+import org.nlu.bookstore.enums.RoleName;
 import org.nlu.bookstore.exception.AppException;
 import org.nlu.bookstore.exception.ErrorCode;
+import org.nlu.bookstore.repository.OtpTokenRepository;
 import org.nlu.bookstore.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -26,8 +34,10 @@ import org.springframework.util.CollectionUtils;
 
 import java.text.ParseException;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.Random;
 import java.util.StringJoiner;
 import java.util.UUID;
 
@@ -37,6 +47,8 @@ import java.util.UUID;
 public class AuthenticationService {
 
     UserRepository userRepository;
+    EmailService emailService;
+    OtpTokenRepository otpTokenRepository;
     private final PasswordEncoder passwordEncoder;
 
     @NonFinal
@@ -60,8 +72,17 @@ public class AuthenticationService {
 
         return AuthenticationResponse.builder()
                 .token(token)
-                .authenticated(true)
+                .isAdmin(checkAdmin(user))
                 .build();
+    }
+
+    private boolean checkAdmin(User user) {
+        for (Role role : user.getRoles()) {
+            if (RoleName.ADMIN.name().equals(role.getName())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public IntrospectResponse introspect(IntrospectRequest request) throws ParseException, JOSEException {
@@ -134,5 +155,59 @@ public class AuthenticationService {
         }
 
         return stringJoiner.toString();
+    }
+
+    public ForgotPasswordResponse forgotPassword(ForgotPasswordRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        String otp = String.format("%06d", new Random().nextInt(999999)); // generate OTP
+
+        OtpToken token = OtpToken.builder()
+                .email(user.getEmail())
+                .otp(otp)
+                .expiryTime(LocalDateTime.now().plusMinutes(5))
+                .used(false)
+                .build();
+        otpTokenRepository.save(token);
+
+        emailService.sendMail(request.getEmail(), "Mã OTP đặt lại mật khẩu",
+                "Mã OTP của bạn là: " + otp + " có hiệu lực trong 5 phút!");
+
+        return ForgotPasswordResponse.builder()
+                .message("Email sent")
+                .build();
+    }
+
+    public Boolean verifyOtp(String email, String otp) {
+        OtpToken otpToken = otpTokenRepository.findByEmailAndOtp(email, otp)
+                .orElseThrow(() -> new AppException(ErrorCode.OTP_INVALID));
+
+        if (otpToken.isUsed())
+            throw new AppException(ErrorCode.OTP_IS_USED);
+
+        if (otpToken.getExpiryTime().isBefore(LocalDateTime.now()))
+            throw new AppException(ErrorCode.OTP_IS_EXPIRY);
+
+        otpToken.setUsed(true);
+        otpTokenRepository.save(otpToken);
+
+        return true;
+    }
+
+    public UserResponse resetPassword(ResetPasswordRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        return UserResponse.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .address(user.getAddress())
+                .phoneNumber(user.getPhoneNumber())
+                .build();
     }
 }

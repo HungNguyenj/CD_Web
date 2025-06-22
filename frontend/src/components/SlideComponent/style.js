@@ -1,41 +1,47 @@
-import Slider from "react-slick";
-import styled from "styled-components";
+import styled from 'styled-components';
+import Slider from 'react-slick';
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
 
-export const WrapperSliderStyle = styled(Slider)`
-    & .slick-arrow.slick-prev {
-        left: 12px;
-        top: 50%;
-        z-index: 10;
-        &::before {
+export const WrapperSlideStyle = styled(Slider)`
+    .slick-dots {
+        bottom: 20px;
+        
+        li button {
+            &:before {
+                font-size: 12px;
+                color: white;
+                opacity: 0.5;
+        }
+    }
+        
+        li.slick-active button:before {
+            opacity: 1;
+            color: white;
+        }
+    }
+
+    .slick-prev, .slick-next {
+        z-index: 1;
+        width: 40px;
+        height: 40px;
+        
+        &:before {
             font-size: 40px;
-            color: #fff;
         }
     }
-    & .slick-arrow.slick-next {
-        right: 28px;
-        top: 50%;
-        z-index: 10;
-        &::before {
-            font-size: 40px;
-            color: #fff;
-        }
+
+    .slick-prev {
+        left: 20px;
     }
-    & .slick-dots {
-        z-index: 10;
-        bottom: -2px !important;
-        li {
-            button {
-                &::before {
-                    color: rgb(255, 255, 0.5);
+
+    .slick-next {
+        right: 20px;
                 }
-            }
-        }
-        li.active {
-            button {
-                &::before {
-                    color: #fff;
-                }
-            }
+
+    &:hover {
+        .slick-prev, .slick-next {
+            opacity: 1;
         }
     }
-`
+`;

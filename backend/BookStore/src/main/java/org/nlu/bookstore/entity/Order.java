@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.nlu.bookstore.enums.OrderStatus;
+import org.nlu.bookstore.enums.PaymentMethod;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -29,6 +30,9 @@ public class Order extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     OrderStatus status; // ENUM: PENDING, PROCESSING, SHIPPED, DELIVERED, CANCELLED
+
+    @Enumerated(EnumType.STRING)
+    PaymentMethod paymentMethod;
 
     BigDecimal totalAmount;
 

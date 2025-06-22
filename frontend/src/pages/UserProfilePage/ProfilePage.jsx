@@ -1,201 +1,267 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { FaUser, FaPhone, FaMapMarkerAlt, FaEdit, FaSave } from 'react-icons/fa';
+import { FaUser, FaPhone, FaMapMarkerAlt, FaEdit, FaSave, FaEnvelope } from 'react-icons/fa';
+import axiosInstance from '../../api/axiosConfig';
+import { API_ENDPOINTS } from '../../constants/apiEndpoints';
+import { message } from 'antd';
 
 const Profile = () => {
     const [profile, setProfile] = useState(null);
-    const [error, setError] = useState(null);
-    const [editMode, setEditMode] = useState(false); // Trạng thái để kiểm soát việc hiển thị form chỉnh sửa
-    const [phoneNumber, setPhoneNumber] = useState('');
-    const [address, setAddress] = useState('');
-
-    const fetchProfile = async () => {
-        try {
-            const response = await axios.get('http://localhost:8080/api/profile', {
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem('token')}`,
-                },
-            });
-            setProfile(response.data);
-            setPhoneNumber(response.data.phoneNumber);
-            setAddress(response.data.address);
-        } catch (error) {
-            setError(error.response.data.message);
-        }
-    };
+    const [editMode, setEditMode] = useState(false);
+    const [formData, setFormData] = useState({
+        phoneNumber: '',
+        address: '',
+        email: ''
+    });
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         fetchProfile();
     }, []);
 
-    const handleUpdateProfile = async () => {
-        fetch(`http://localhost:8080/update/${profile.id}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${localStorage.getItem('token')}`,
-            },
-            body: JSON.stringify({ phoneNumber, address }),
-        })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Profile updated successfully:');
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Profile updated successfully:', data);
-                setProfile(data); // Cập nhật lại thông tin profile trong state
-                setEditMode(false); // Thoát chế độ chỉnh sửa
-                fetchProfile(); // Reload lại thông tin profile
-            })
-            .catch(error => {
-                console.error('Profile updated successfully:', error);
-                // Xử lý lỗi khi cập nhật không thành công
-                setError('Profile updated successfully:');
-                window.location.reload(); // Load lại trang
-            });
+    const fetchProfile = async () => {
+        try {
+            setLoading(true);
+            const profileData = await axiosInstance.get(API_ENDPOINTS.USER_PROFILE);
+            console.log('Profile response:', profileData); // Để debug
+
+            if (profileData) {
+                setProfile(profileData);
+                setFormData({
+                    phoneNumber: profileData.phoneNumber || '',
+                    address: profileData.address || '',
+                    email: profileData.email || ''
+                });
+            } else {
+                throw new Error('Invalid response format');
+            }
+        } catch (err) {
+            console.error('Error fetching profile:', err);
+            message.error('Không thể tải thông tin cá nhân. Vui lòng thử lại sau.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleEdit = () => {
-        setEditMode(true); // Khi nhấn chỉnh sửa, hiển thị form chỉnh sửa
+        setEditMode(true);
     };
 
-    const handleChangePhoneNumber = (event) => {
-        setPhoneNumber(event.target.value);
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleChangeAddress = (event) => {
-        setAddress(event.target.value);
+    const validateForm = () => {
+        if (formData.phoneNumber && !/^[0-9]{10}$/.test(formData.phoneNumber)) {
+            message.error('Số điện thoại không hợp lệ. Vui lòng nhập 10 chữ số.');
+            return false;
+        }
+        if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+            message.error('Email không hợp lệ.');
+            return false;
+        }
+        return true;
     };
 
-    if (error) {
-        return <div style={{ maxWidth: '600px', margin: 'auto', padding: '20px', border: '1px solid #ccc', borderRadius: '5px', boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)' }}>{error}</div>;
-    }
+    const handleUpdateProfile = async () => {
+        if (!validateForm()) return;
 
-    if (!profile) {
-        return <div style={{ maxWidth: '600px', margin: 'auto', padding: '20px', border: '1px solid #ccc', borderRadius: '5px', boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)' }}>Loading...</div>;
+        try {
+            const updatedData = await axiosInstance.put(
+                API_ENDPOINTS.USER_BY_ID(profile.id),
+                formData
+            );
+            
+            if (updatedData) {
+                setProfile(updatedData);
+                setEditMode(false);
+                message.success('Cập nhật thông tin thành công!');
+                await fetchProfile(); // Refresh data
+            } else {
+                throw new Error('Invalid response format');
+            }
+        } catch (err) {
+            console.error('Error updating profile:', err);
+            const errorMessage = err.response?.data?.message || 'Không thể cập nhật thông tin. Vui lòng thử lại sau.';
+            message.error(errorMessage);
+        }
+    };
+
+    if (loading) {
+        return <div style={styles.loading}>Đang tải thông tin...</div>;
     }
 
     return (
         <div style={styles.container}>
-            <h2 style={styles.title}>Profile</h2>
-            <div style={styles.info}>
-                <FaUser style={styles.icon} />
-                <p><strong>Username:</strong> {profile.username}</p>
-            </div>
-            <div style={styles.info}>
-                <FaPhone style={styles.icon} />
-                <p><strong>Phone Number:</strong> {profile.phoneNumber}</p>
-            </div>
-            <div style={styles.info}>
-                <FaMapMarkerAlt style={styles.icon} />
-                <p><strong>Address:</strong> {profile.address}</p>
+            <h2 style={styles.title}>Thông Tin Cá Nhân</h2>
+            
+            <div style={styles.infoContainer}>
+                <div style={styles.info}>
+                    <FaUser style={styles.icon} />
+                    <div style={styles.infoContent}>
+                        <strong>Tên đăng nhập:</strong>
+                        <span>{profile?.username || 'Chưa cập nhật'}</span>
+                    </div>
+                </div>
+
+                <div style={styles.info}>
+                    <FaEnvelope style={styles.icon} />
+                    <div style={styles.infoContent}>
+                        <strong>Email:</strong>
+                        {editMode ? (
+                            <input
+                                type="email"
+                                name="email"
+                                value={formData.email}
+                                onChange={handleInputChange}
+                                style={styles.input}
+                                placeholder="Nhập email của bạn"
+                            />
+                        ) : (
+                            <span>{profile?.email || 'Chưa cập nhật'}</span>
+                        )}
+                    </div>
+                </div>
+
+                <div style={styles.info}>
+                    <FaPhone style={styles.icon} />
+                    <div style={styles.infoContent}>
+                        <strong>Số điện thoại:</strong>
+                        {editMode ? (
+                            <input
+                                type="tel"
+                                name="phoneNumber"
+                                value={formData.phoneNumber}
+                                onChange={handleInputChange}
+                                style={styles.input}
+                                placeholder="Nhập số điện thoại"
+                            />
+                        ) : (
+                            <span>{profile?.phoneNumber || 'Chưa cập nhật'}</span>
+                        )}
+                    </div>
+                </div>
+
+                <div style={styles.info}>
+                    <FaMapMarkerAlt style={styles.icon} />
+                    <div style={styles.infoContent}>
+                        <strong>Địa chỉ:</strong>
+                        {editMode ? (
+                            <input
+                                type="text"
+                                name="address"
+                                value={formData.address}
+                                onChange={handleInputChange}
+                                style={styles.input}
+                                placeholder="Nhập địa chỉ của bạn"
+                            />
+                        ) : (
+                            <span>{profile?.address || 'Chưa cập nhật'}</span>
+                        )}
+                    </div>
+                </div>
             </div>
 
-            {editMode ? (
-                <form style={styles.form}>
-                    <label style={styles.label}>
-                        Phone Number:
-                        <input type="text" value={phoneNumber} onChange={handleChangePhoneNumber} style={styles.input} />
-                    </label>
-                    <br />
-                    <label style={styles.label}>
-                        Address:
-                        <input type="text" value={address} onChange={handleChangeAddress} style={styles.input} />
-                    </label>
-                    <br />
-                    <button type="button" onClick={handleUpdateProfile} style={{ ...styles.button, ...styles.saveButton }}>
-                        <FaSave style={styles.iconButton} /> Save
+            <div style={styles.buttonContainer}>
+                {editMode ? (
+                    <button onClick={handleUpdateProfile} style={{ ...styles.button, ...styles.saveButton }}>
+                        <FaSave /> Lưu thay đổi
                     </button>
-                </form>
-            ) : (
-                <button onClick={handleEdit} style={{ ...styles.button, ...styles.editButton }}>
-                    <FaEdit style={styles.iconButton} /> Edit Profile
-                </button>
-            )}
+                ) : (
+                    <button onClick={handleEdit} style={{ ...styles.button, ...styles.editButton }}>
+                        <FaEdit /> Chỉnh sửa
+                    </button>
+                )}
+            </div>
         </div>
     );
 };
 
 const styles = {
     container: {
-        maxWidth: '600px',
-        margin: 'auto',
+        maxWidth: '800px',
+        margin: '50px auto',
         padding: '30px',
         border: '1px solid #ddd',
-        borderRadius: '10px',
-        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-        backgroundColor: '#ffffff',
-        fontFamily: "'Arial', sans-serif",
-        textAlign: 'center',
-        transition: 'transform 0.3s',
+        borderRadius: '12px',
+        backgroundColor: '#fff',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+        fontFamily: 'Arial, sans-serif',
     },
     title: {
-        fontSize: '26px',
-        marginBottom: '20px',
-        color: '#333',
+        fontSize: '28px',
         fontWeight: 'bold',
-        borderBottom: '2px solid #007bff',
-        paddingBottom: '10px',
+        marginBottom: '30px',
+        textAlign: 'center',
+        color: '#1890ff',
+    },
+    infoContainer: {
+        marginBottom: '30px',
     },
     info: {
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: '15px',
+        marginBottom: '20px',
+        padding: '15px',
+        backgroundColor: '#f8f9fa',
+        borderRadius: '8px',
+        transition: 'all 0.3s ease',
     },
     icon: {
-        marginRight: '10px',
-        color: '#007bff',
+        fontSize: '24px',
+        marginRight: '15px',
+        color: '#1890ff',
     },
-    form: {
+    infoContent: {
+        flex: 1,
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
-    },
-    label: {
-        display: 'block',
-        marginBottom: '10px',
-        fontSize: '18px',
-        color: '#555',
+        gap: '5px',
     },
     input: {
-        width: 'calc(100% - 20px)',
-        padding: '10px',
+        padding: '8px 12px',
+        border: '1px solid #d9d9d9',
+        borderRadius: '4px',
+        fontSize: '14px',
+        width: '100%',
         marginTop: '5px',
-        marginBottom: '15px',
-        border: '1px solid #ddd',
-        borderRadius: '5px',
-        fontSize: '16px',
-        boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.1)',
+    },
+    buttonContainer: {
+        display: 'flex',
+        justifyContent: 'center',
+        marginTop: '20px',
     },
     button: {
-        display: 'inline-block',
-        padding: '12px 25px',
-        fontSize: '16px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        padding: '10px 20px',
         border: 'none',
-        borderRadius: '5px',
+        borderRadius: '6px',
+        fontSize: '16px',
         cursor: 'pointer',
-        transition: 'background-color 0.3s ease, transform 0.3s',
-        textAlign: 'center',
-        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
-    },
-    saveButton: {
-        backgroundColor: '#28a745',
-        color: 'white',
+        transition: 'all 0.3s ease',
     },
     editButton: {
-        backgroundColor: '#007bff',
+        backgroundColor: '#1890ff',
         color: 'white',
+        '&:hover': {
+            backgroundColor: '#40a9ff',
+        },
     },
-    iconButton: {
-        marginRight: '5px',
+    saveButton: {
+        backgroundColor: '#52c41a',
+        color: 'white',
+        '&:hover': {
+            backgroundColor: '#73d13d',
+        },
     },
-    error: {
-        color: 'red',
+    loading: {
         textAlign: 'center',
-    }
+        padding: '50px',
+        fontSize: '18px',
+        color: '#666',
+    },
 };
 
 export default Profile;

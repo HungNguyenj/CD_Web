@@ -43,7 +43,7 @@ public class ApplicationInitConfig {
     }
 
     @Bean
-    ApplicationRunner applicationRunner(UserRepository userRepository, RoleRepository roleRepository) {
+    ApplicationRunner applicationRunner2(UserRepository userRepository, RoleRepository roleRepository) {
         return args -> {
           if (userRepository.findByUsername("admin").isEmpty()) {
               var roles = roleRepository.findAllByName(RoleName.ADMIN.name());

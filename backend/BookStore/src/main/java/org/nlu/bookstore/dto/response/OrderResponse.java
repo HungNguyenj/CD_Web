@@ -2,6 +2,7 @@ package org.nlu.bookstore.dto.response;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.nlu.bookstore.enums.PaymentMethod;
 
 import java.math.BigDecimal;
 
@@ -16,4 +17,8 @@ public class OrderResponse {
     private BigDecimal totalAmount;
     private String createdAt;
     private String updatedAt;
+    PaymentMethod paymentMethod;
+    private String address;
+    private String phone;
+
 }

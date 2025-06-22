@@ -8,15 +8,16 @@ import SignInPage from "../pages/SignInPage/SignInPage";
 import SignUpPage from "../pages/SignUpPage/SignUpPage";
 import TypeProductPage from "../pages/TypeProductPage/TypeProductPage";
 import RegisterPage from "../pages/RegisterPage/Register.js";
-
 import LoginPage from '../pages/LoginPage/Login.js';
 import AdminPage from "../pages/AdminPage/AdminPage.jsx";
 import CheckoutPage from "../pages/CheckoutPage/CheckoutPage";
-
 import ProfilePage from "../pages/UserProfilePage/ProfilePage";
 import SearchResults from "../components/SearchResults/SearchResults";
 import OrderInforPage from "../pages/OrderInforPage/OrderInforPage";
-
+import OrderSuccessPage from "../pages/OrderSuccessPage/OrderSuccessPage";
+import ForgotPasswordPage from "../pages/ForgotPasswordPage/ForgotPasswordPage";
+import VerifyOTPPage from "../pages/VerifyOTPPage/VerifyOTPPage";
+import ResetPasswordPage from "../pages/ResetPasswordPage/ResetPasswordPage";
 
 export const routes = [
     {
@@ -30,10 +31,15 @@ export const routes = [
         isShowHeader: true 
     },
     {
-    path: '/orderInfo',
-    page: OrderInforPage,
-    isShowHeader: true
-},
+        path: '/order-success',
+        page: OrderSuccessPage,
+        isShowHeader: true
+    },
+    {
+        path: '/orderInfo',
+        page: OrderInforPage,
+        isShowHeader: true
+    },
     {
         path: '/products',
         page: ProductsPage,
@@ -82,7 +88,21 @@ export const routes = [
     {
         path: '/register',
         page: RegisterPage,
-
+        isShowHeader: true
+    },
+    {
+        path: '/forgot-password',
+        page: ForgotPasswordPage,
+        isShowHeader: true
+    },
+    {
+        path: '/verify-otp',
+        page: VerifyOTPPage,
+        isShowHeader: true
+    },
+    {
+        path: '/reset-password',
+        page: ResetPasswordPage,
         isShowHeader: true
     },
     {

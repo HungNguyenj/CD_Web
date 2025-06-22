@@ -20,10 +20,10 @@ public class CartItemController {
 
     CartItemService cartItemService;
 
-    @GetMapping("/{userId}")
-    ResponseEntity<ApiResponse<CartItemListResponse>> getCartItemsByUserId(@PathVariable("userId") Long userId) {
+    @GetMapping()
+    ResponseEntity<ApiResponse<CartItemListResponse>> getCartItems() {
         ApiResponse<CartItemListResponse> apiResponse = ApiResponse.<CartItemListResponse>builder()
-                .data(cartItemService.getUserCartById(userId))
+                .data(cartItemService.getUserCart())
                 .build();
         return ResponseEntity.ok().body(apiResponse);
     }

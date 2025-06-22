@@ -3,13 +3,13 @@ import ProductDetailComponent from "../../components/ProductDetailComponent/Prod
 
 
 const ProductDetailPage = () => {
-    
+
     return (
         <div style={{padding:'0 120px', background:'#efefef'}}>
-        
-           
+
+
                 <ProductDetailComponent/>
-         
+
         </div>
     )
 }

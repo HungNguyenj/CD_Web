@@ -69,4 +69,31 @@ public class ProductService {
         productRepository.deleteById(id);
     }
 
+    public List<ProductResponse> searchProduct(String keyword) {
+        if (keyword == null || keyword.isEmpty()) {
+            return List.of();
+        }
+        String lowerCaseKeyword = keyword.trim().toLowerCase();
+        List<Product> products =
+                productRepository.findAllByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase
+                        (lowerCaseKeyword, lowerCaseKeyword);
+        return products.stream().map(productMapper::toProductResponse).toList();
+    }
+
+    public List<ProductResponse> getProductsByCategory(Long categoryId) {
+        List<Product> products = productRepository.findAllByCategory_Id(categoryId);
+        return products.stream().map(productMapper::toProductResponse).toList();
+    }
+
+    public List<ProductResponse> getProductByPrice(Long categoryId, Double minPrice, Double maxPrice) {
+        List<Product> products = productRepository.findByCategory_IdAndPriceBetween(categoryId, minPrice, maxPrice);
+        return products.stream().map(productMapper::toProductResponse).toList();
+    }
+
+    public List<ProductResponse> getProductSuggest(Long productId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
+        Long categoryId = product.getCategory().getId();
+        return getProductsByCategory(categoryId);
+    }
 }

@@ -13,5 +13,7 @@ import org.nlu.bookstore.entity.User;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CartItemResponse {
     Long id;
-    CartItem cartItem;
+    User user;
+    Product product;
+    int quantity;
 }
