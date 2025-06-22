@@ -15,6 +15,9 @@ import ProfilePage from "../pages/UserProfilePage/ProfilePage";
 import SearchResults from "../components/SearchResults/SearchResults";
 import OrderInforPage from "../pages/OrderInforPage/OrderInforPage";
 import OrderSuccessPage from "../pages/OrderSuccessPage/OrderSuccessPage";
+import ForgotPasswordPage from "../pages/ForgotPasswordPage/ForgotPasswordPage";
+import VerifyOTPPage from "../pages/VerifyOTPPage/VerifyOTPPage";
+import ResetPasswordPage from "../pages/ResetPasswordPage/ResetPasswordPage";
 
 export const routes = [
     {
@@ -85,6 +88,21 @@ export const routes = [
     {
         path: '/register',
         page: RegisterPage,
+        isShowHeader: true
+    },
+    {
+        path: '/forgot-password',
+        page: ForgotPasswordPage,
+        isShowHeader: true
+    },
+    {
+        path: '/verify-otp',
+        page: VerifyOTPPage,
+        isShowHeader: true
+    },
+    {
+        path: '/reset-password',
+        page: ResetPasswordPage,
         isShowHeader: true
     },
     {

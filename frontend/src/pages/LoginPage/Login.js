@@ -108,7 +108,7 @@ export default function LoginPage() {
                                         <label className="form-check-label">Ghi nhớ tài khoản</label>
                                     </div>
                                     <div>
-                                        <Link to="/forgot-password" className="forget-pass">
+                                        <Link to="/forgot-password" className="forget-pass" state={{ from: 'login' }}>
                                             Quên mật khẩu?
                                         </Link>
                                     </div>

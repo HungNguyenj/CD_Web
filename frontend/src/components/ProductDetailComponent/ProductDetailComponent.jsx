@@ -79,7 +79,7 @@ const ProductDetailComponent = () => {
         if (!isLoggedIn()) {
             navigate('/login');
         } else {
-            navigate('/checkout', { state: { productId: product.id, quantity: selectedQuantity } });
+            addToCart(productId, quantity, true);
         }
     };
 

@@ -37,9 +37,13 @@ const HeaderComponent = () => {
     }, []);
 
     const handleLogout = () => {
+        // Clear all user-related data from localStorage
         localStorage.removeItem("username");
         localStorage.removeItem("token");
+        localStorage.removeItem("isAdmin");
+        localStorage.removeItem("cart_item");
         setUsername(null);
+        setCartCount(0);
         navigate("/login");
         message.success("Đăng xuất thành công!");
     };
